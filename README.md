@@ -4,7 +4,7 @@ Milano Water Project Core Functions
 ## ** IMPORTANT ** Install MWPEnv Project Prior to Installing MWPCore
 
 ## Install the Project
-- -> git clone https://github.com/whitejv/MilanoWaterProject.git
+- -> git clone https://github.com/whitejv/MWPCore.git
 
 ## Configure the Project
 - -> cd ~
