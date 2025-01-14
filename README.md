@@ -8,7 +8,7 @@ Milano Water Project Core Functions
 
 ## Configure the Project
 - -> cd ~
-- -> cd MilanoWaterProject
+- -> cd MWPCore
   
 ### CMake Process
 - -> cmake -S . (to rebuild the Root Makefile
@@ -22,6 +22,6 @@ Milano Water Project Core Functions
 ## Add to Cron for Start on Reboot
 - -> crontab -e
 - -> add the following line to the bottom of the cron file: @reboot sleep 20 && bash /home/pi/MWPCore/h2o.sh
-- -> cd MilanoWaterProject
+- -> cd MWPCore
 - -> chmod +x h2o.sh
 - -> reboot
