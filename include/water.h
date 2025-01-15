@@ -261,7 +261,7 @@ int	flow_data_payload[10] ; //must match messagelen below
 const char GENERICSENS_CLIENTID[] =    "Generic Flow Client" ;
 const char GENERICSENS_TOPICID[] =  "mwp/data/sensor/generic/X001D";
 const char GENERICSENS_JSONID[] =  "mwp/json/data/sensor/generic/X001D";
-#define GENERICSENS_LEN 10
+#define GENERICSENS_LEN 20
 
 union   GENERICSENS_  {
    int     data_payload[GENERICSENS_LEN] ;
