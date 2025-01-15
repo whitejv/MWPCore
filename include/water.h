@@ -234,7 +234,7 @@ int	flow_data_payload[10] ; //must match messagelen below
 * Type: data
 * MQTT Client ID: Generic Flow Client
 * MQTT Topic ID: 
-* MSG Length: 10
+* MSG Length: 20
 *  word #        data type            variable                description        min        max        nominal
 *  0        int            pulse_count                Pulses Counted in Time Window        0        5000        20
 *  1        int            milliseconds                Number of milliseconds in Time Window        0        10000        2000
