@@ -11,4 +11,4 @@ target_link_directories(housemonitor PRIVATE /home/pi/paho.mqtt.c/build/output/l
 target_include_directories(housemonitor PRIVATE ${JSONC_INCLUDE_DIRS}) # Add the include directories for json-c
 target_link_libraries(housemonitor libpaho-mqtt3c.so libpaho-mqtt3a.so libpaho-mqtt3as.so libpaho-mqtt3cs.so libmylib.a ${JSONC_LIBRARIES})
 
-install(TARGETS housemonitor DESTINATION /home/pi/MilanoWaterProject/bin)
+install(TARGETS housemonitor DESTINATION /home/pi/MWPCore/bin)
