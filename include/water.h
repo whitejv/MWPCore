@@ -198,7 +198,7 @@ int SubFirmware = 0x80FF;
 #define TEMPSENSOR  2
 #define CONFIGPIN1  12  //GPIO 12   Input with Pullup
 #define CONFIGPIN2  3   //GPIO 3    Input with Pullup
-#define CONFIGPIN3  4   //GPIO 4    Input with Pullup
+#define CONFIGPIN3  14  //GPIO 14    Input with Pullup
 #define DISCINPUT2  14  //  Input with Pullup (only non-extended boards)
 #define DISCINPUT1  5   //  Input with Pullup
 
