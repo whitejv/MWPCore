@@ -401,6 +401,7 @@ int main(int argc, char* argv[])
          log_.log.intervalFlow = irrigationMon_.irrigation.intervalFlow;
          log_.log.amperage = irrigationMon_.irrigation.amperage;
          log_.log.secondsOn = irrigationMon_.irrigation.secondsOn ;
+         log_.log.gallonsTank = 0;
          
          publishLogMessage(&log_, "irrigation");
       } else {
@@ -478,6 +479,8 @@ void publishLogMessage(union LOG_ *log_data, const char *message_id) {
       json_object_new_double(log_data->log.amperage));
    json_object_object_add(root, log_ClientData_var_name[6], 
       json_object_new_double(log_data->log.secondsOn));
+   json_object_object_add(root, log_ClientData_var_name[7], 
+      json_object_new_double(log_data->log.gallonsTank));
 
 
    const char *json_string = json_object_to_json_string(root);

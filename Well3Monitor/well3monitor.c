@@ -197,6 +197,7 @@ if (wellMon_.well.well_pump_3_on == 1) {
     log_.log.intervalFlow = well3Mon_.well3.intervalFlow;
     log_.log.amperage = well3Mon_.well3.amperage;
     log_.log.secondsOn = well3Mon_.well3.secondsOn;
+    log_.log.gallonsTank = 0;
 
     publishLogMessage(&log_, "well3");
 } else {
@@ -325,6 +326,8 @@ void publishLogMessage(union LOG_ *log_data, const char *message_id) {
       json_object_new_double(log_data->log.amperage));
    json_object_object_add(root, log_ClientData_var_name[6], 
       json_object_new_double(log_data->log.secondsOn));
+   json_object_object_add(root, log_ClientData_var_name[7], 
+      json_object_new_double(log_data->log.gallonsTank));
 
    const char *json_string = json_object_to_json_string(root);
    

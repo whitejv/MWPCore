@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pi/MilanoWaterProject
+CMAKE_SOURCE_DIR = /home/pi/MWPCore
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pi/MilanoWaterProject
+CMAKE_BINARY_DIR = /home/pi/MWPCore
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,14 +132,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/pi/MilanoWaterProject && $(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MilanoWaterProject/CMakeFiles /home/pi/MilanoWaterProject/Blynk//CMakeFiles/progress.marks
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MilanoWaterProject/CMakeFiles 0
+	cd /home/pi/MWPCore && $(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MWPCore/CMakeFiles /home/pi/MWPCore/Blynk//CMakeFiles/progress.marks
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MWPCore/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/clean
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,22 +148,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/preinstall
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/preinstall
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/pi/MilanoWaterProject && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/pi/MWPCore && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 Blynk/CMakeFiles/blynkWater.dir/rule:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/CMakeFiles/blynkWater.dir/rule
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Blynk/CMakeFiles/blynkWater.dir/rule
 .PHONY : Blynk/CMakeFiles/blynkWater.dir/rule
 
 # Convenience name for target.
@@ -172,7 +172,7 @@ blynkWater: Blynk/CMakeFiles/blynkWater.dir/rule
 
 # fast build rule for target.
 blynkWater/fast:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/build
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/build
 .PHONY : blynkWater/fast
 
 blynkWater.o: blynkWater.c.o
@@ -180,7 +180,7 @@ blynkWater.o: blynkWater.c.o
 
 # target to build an object file
 blynkWater.c.o:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/blynkWater.c.o
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/blynkWater.c.o
 .PHONY : blynkWater.c.o
 
 blynkWater.i: blynkWater.c.i
@@ -188,7 +188,7 @@ blynkWater.i: blynkWater.c.i
 
 # target to preprocess a source file
 blynkWater.c.i:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/blynkWater.c.i
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/blynkWater.c.i
 .PHONY : blynkWater.c.i
 
 blynkWater.s: blynkWater.c.s
@@ -196,7 +196,7 @@ blynkWater.s: blynkWater.c.s
 
 # target to generate assembly for a file
 blynkWater.c.s:
-	cd /home/pi/MilanoWaterProject && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/blynkWater.c.s
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f Blynk/CMakeFiles/blynkWater.dir/build.make Blynk/CMakeFiles/blynkWater.dir/blynkWater.c.s
 .PHONY : blynkWater.c.s
 
 # Help Target
@@ -226,6 +226,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/pi/MilanoWaterProject && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/pi/MWPCore && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

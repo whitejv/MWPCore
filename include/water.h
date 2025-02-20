@@ -234,7 +234,7 @@ int	flow_data_payload[10] ; //must match messagelen below
 * Type: data
 * MQTT Client ID: Generic Flow Client
 * MQTT Topic ID: 
-* MSG Length: 20
+* MSG Length: 25
 *  word #        data type            variable                description        min        max        nominal
 *  0        int            pulse_count                Pulses Counted in Time Window        0        5000        20
 *  1        int            milliseconds                Number of milliseconds in Time Window        0        10000        2000
@@ -243,7 +243,7 @@ int	flow_data_payload[10] ; //must match messagelen below
 *  4        int            gpio_sensor                GPIO Sensor Data: Bit 1: GPIO 4, Bit 2: GPIO 5        0        3        3
 *  5        int            temp                Temp f (int)        -32        150        80
 *  6        int            temp_w1                Temperature in F Float Bytes 1&2                        
-*  7        int            temp_w2                Temperature in F Float Bytes 3&4                        
+*  7        int            spare                spare                        
 *  8        int            cycle_count                 Cycle Counter        0        28800        
 *  9        int            fw_version                 FW Version 4 Hex                         
 *  10        int            adc_x1                extended sensor adc - 1                        
@@ -256,12 +256,17 @@ int	flow_data_payload[10] ; //must match messagelen below
 *  17        int            adc_x8                extended sensor adc - 8                        
 *  18        int            GPIO_x1                estended sensor GPIO - 1                        
 *  19        int            GPIO_x2                estended sensor GPIO - 2                        
+*  20        int            tempx                temp f (int) extended Sensor                        
+*  21        int            tempx_f                temp f float                        
+*  22        int            pressurex                pressure extended sensor                        
+*  23        int            pressurex_f                pressure float                        
+*  24        int            humidity                humidity                        
 */
 
 const char GENERICSENS_CLIENTID[] =    "Generic Flow Client" ;
 const char GENERICSENS_TOPICID[] =  "mwp/data/sensor/generic/X001D";
 const char GENERICSENS_JSONID[] =  "mwp/json/data/sensor/generic/X001D";
-#define GENERICSENS_LEN 20
+#define GENERICSENS_LEN 25
 
 union   GENERICSENS_  {
    int     data_payload[GENERICSENS_LEN] ;
@@ -274,7 +279,7 @@ union   GENERICSENS_  {
       int   gpio_sensor    ;
       int   temp    ;
       int   temp_w1    ;
-      int   temp_w2    ;
+      int   spare    ;
       int   cycle_count    ;
       int   fw_version    ;
       int   adc_x1    ;
@@ -287,6 +292,11 @@ union   GENERICSENS_  {
       int   adc_x8    ;
       int   GPIO_x1    ;
       int   GPIO_x2    ;
+      int   tempx    ;
+      int   tempx_f    ;
+      int   pressurex    ;
+      int   pressurex_f    ;
+      int   humidity    ;
    }  generic  ;
 }  ;
 union  GENERICSENS_  genericSens_  ;
@@ -299,7 +309,7 @@ char* genericsens_ClientData_var_name [] = {
     "X001D:gpio_sensor",
     "X001D:temp",
     "X001D:temp_w1",
-    "X001D:temp_w2",
+    "X001D:spare",
     "X001D:cycle_count",
     "X001D:fw_version",
     "X001D:adc_x1",
@@ -312,6 +322,11 @@ char* genericsens_ClientData_var_name [] = {
     "X001D:adc_x8",
     "X001D:GPIO_x1",
     "X001D:GPIO_x2",
+    "X001D:tempx",
+    "X001D:tempx_f",
+    "X001D:pressurex",
+    "X001D:pressurex_f",
+    "X001D:humidity",
 }  ;
 
 /*
@@ -559,7 +574,7 @@ char* well3sens_ClientData_var_name [] = {
 * Type: data
 * MQTT Client ID: Well Flow Client
 * MQTT Topic ID: 
-* MSG Length: 20
+* MSG Length: 25
 *  word #        data type            variable                description        min        max        nominal
 *  0        int            pulse_count                Pulses Counted in Time Window        0        5000        20
 *  1        int            milliseconds                Number of milliseconds in Time Window        0        10000        2000
@@ -568,7 +583,7 @@ char* well3sens_ClientData_var_name [] = {
 *  4        int            gpio_sensor                GPIO Sensor Data: Bit 1: GPIO 4, Bit 2: GPIO 5        0        3        3
 *  5        int            temp                Temp f (int)        -32        150        80
 *  6        int            temp_w1                Temperature in F Float Bytes 1&2                        
-*  7        int            temp_w2                Temperature in F Float Bytes 3&4                        
+*  7        int            spare                spare                        
 *  8        int            cycle_count                 Cycle Counter        0        28800        
 *  9        int            fw_version                 FW Version 4 Hex                         
 *  10        int            adc_x1                Current Sense for Well #1                        
@@ -581,12 +596,17 @@ char* well3sens_ClientData_var_name [] = {
 *  17        int            adc_x8                extended sensor adc - 8                        
 *  18        int            GPIO_x1                estended sensor GPIO - 1                        
 *  19        int            GPIO_x2                estended sensor GPIO - 2                        
+*  20        int            tempx                temp f (int) extended Sensor                        
+*  21        int            tempx_f                temp f float                        
+*  22        int            pressurex                pressure extended sensor                        
+*  23        int            pressurex_f                pressure float                        
+*  24        int            humidity                humidity                        
 */
 
 const char WELLSENS_CLIENTID[] =    "Well Flow Client" ;
 const char WELLSENS_TOPICID[] =  "mwp/data/sensor/well/S005D";
 const char WELLSENS_JSONID[] =  "mwp/json/data/sensor/well/S005D";
-#define WELLSENS_LEN 20
+#define WELLSENS_LEN 25
 
 union   WELLSENS_  {
    int     data_payload[WELLSENS_LEN] ;
@@ -599,7 +619,7 @@ union   WELLSENS_  {
       int   gpio_sensor    ;
       int   temp    ;
       int   temp_w1    ;
-      int   temp_w2    ;
+      int   spare    ;
       int   cycle_count    ;
       int   fw_version    ;
       int   adc_x1    ;
@@ -612,6 +632,11 @@ union   WELLSENS_  {
       int   adc_x8    ;
       int   GPIO_x1    ;
       int   GPIO_x2    ;
+      int   tempx    ;
+      int   tempx_f    ;
+      int   pressurex    ;
+      int   pressurex_f    ;
+      int   humidity    ;
    }  well  ;
 }  ;
 union  WELLSENS_  wellSens_  ;
@@ -624,7 +649,7 @@ char* wellsens_ClientData_var_name [] = {
     "S005D:gpio_sensor",
     "S005D:temp",
     "S005D:temp_w1",
-    "S005D:temp_w2",
+    "S005D:spare",
     "S005D:cycle_count",
     "S005D:fw_version",
     "S005D:adc_x1",
@@ -637,6 +662,11 @@ char* wellsens_ClientData_var_name [] = {
     "S005D:adc_x8",
     "S005D:GPIO_x1",
     "S005D:GPIO_x2",
+    "S005D:tempx",
+    "S005D:tempx_f",
+    "S005D:pressurex",
+    "S005D:pressurex_f",
+    "S005D:humidity",
 }  ;
 
 /*
@@ -1605,7 +1635,6 @@ char* log_ClientData_var_name [] = {
     "secondsOn",
     "gallonsTank",
 }  ;
-
 
 //#define MilanoWaterProject\IrrigationHeader.h  (created and maintained in Excel)
 /*********************************************************************************
