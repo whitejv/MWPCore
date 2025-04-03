@@ -22,53 +22,14 @@ int stopGallons = 0;
 int tankstartGallons = 0;
 int tankstopGallons = 0;
 
-typedef struct {
-    double value;  // Fused measurement value
-    double error;  // Measurement error
-} FusedMeasurement;
 
-typedef struct {
-    double gain;   // Kalman gain
-    double value;  // Estimated measurement value
-    double error;  // Estimation error
-} KalmanFilter;
-
-FusedMeasurement fused;
 /* Function Declarations */
 
 float GallonsInTankPress(void) ;
-float GallonsInTankUltra(void) ;
-FusedMeasurement fuseMeasurements(double measurement1, double measurement2, double measurementError1, double measurementError2);
 void GallonsPumped(void) ;
-void PumpStats(void) ;
 void MyMQTTSetup(char *mqtt_address) ;
 void MyMQTTPublish(void) ;
 float moving_average(float new_sample, float samples[], uint8_t *sample_index, uint8_t window_size) ;
-
-/* Kalman Filter Setup */
-#define DT 0.1  // Time step
-#define A 1     // Matrix A
-#define H 1     // Matrix H
-#define Q 0.001 // Process noise covariance
-#define R 0.05   // Measurement noise covariance
-
-double x = 0; // Estimated state
-double P = 1; // Estimated state covariance
-double z = 0; // Measurement
-
-/* Kalman Filter Functions */
-void predict()
-{
-   x = A * x;         // Predict new state
-   P = A * P * A + Q; // Predict new state covariance
-}
-
-void update()
-{
-   double K = P * H / (H * P * H + R); // Kalman gain
-   x = x + K * (z - H * x);            // Update state
-   P = (1 - K * H) * P;                // Update state covariance
-}
 
 MQTTClient client;
 MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -87,6 +48,7 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 */
 
 #include "../mylib/msgarrvd.c"
+#include "../mylib/publogmsg.c"
 
 void connlost(void *context, char *cause)
 {
@@ -96,6 +58,7 @@ void connlost(void *context, char *cause)
 
 int main(int argc, char* argv[])
 {
+   int i = 0;
    int rc;
    FILE *fptr;
    time_t t;
@@ -108,7 +71,6 @@ int main(int argc, char* argv[])
    int PriorSecondsFromMidnight =0;
    float intervalFlow = 0;
    float waterHeightPress = 0;
-   float waterHeightUltra = 0;
    float temperatureF;
    float waterHeight = 0;
    float TankGallons = 0;
@@ -116,6 +78,9 @@ int main(int argc, char* argv[])
    float Tank_Area = 0;
    int Float100State = 0;
    int Float25State = 0;
+   // Add a static variable to track the previous timestamp
+   static struct timespec previous_time = {0, 0}; // Initialized to 0 at the start
+   struct timespec current_time;
 
    int opt;
    const char *mqtt_ip;
@@ -208,17 +173,13 @@ int main(int argc, char* argv[])
       //printf("seconds since midnight: %d\n", SecondsFromMidnight);
       PriorSecondsFromMidnight = SecondsFromMidnight ;
       
-      waterHeightPress = GallonsInTankPress() ;
-   
-      //printf("Water Height Press: %f\n", waterHeightPress);
-
-      waterHeight = waterHeightPress;
+      waterHeight = GallonsInTankPress() ;
       /*
        * Use the Equation (PI*R^2*WaterHeight)*VoltoGal to compute Water Gallons in tank
       */
       Tank_Area = PI * Tank_Radius_sqd; // area of base of tank
       TankGallons = ((Tank_Area)*waterHeight) * VoltoGal;
-      // printf("Gallons in Tank = %f\n", TankGallons);
+      //printf("Gallons in Tank = %f\n", TankGallons);
       TankPerFull = TankGallons / MaxTankGal * 100;
       // printf("Percent Gallons in Tank = %f\n", TankPerFull);
      
@@ -235,7 +196,7 @@ int main(int argc, char* argv[])
       tankMon_.tank.controller = 3;
       tankMon_.tank.zone = 1;
       
-      memcpy(&temperatureF, &tankSens_.data_payload[6], sizeof(float));
+      temperatureF = wellSens_.well.temp3;
       tankMon_.tank.temperatureF =    temperatureF;
 
       Float100State = tankSens_.tank.gpio_sensor & 0x01;
@@ -243,12 +204,37 @@ int main(int argc, char* argv[])
       
       tankMon_.tank.float1 =    Float100State;
       tankMon_.tank.float2 =    Float25State;
-      tankMon_.tank.cycleCount =  tankSens_.tank.cycle_count ;
+      tankMon_.tank.cycleCount =  wellSens_.well.cycle_count ;
       tankMon_.tank.fwVersion = 0;
       
+       
       MyMQTTPublish() ;
 
-      PumpStats() ;
+      clock_gettime(CLOCK_MONOTONIC, &current_time);
+
+      if (previous_time.tv_sec != 0 || previous_time.tv_nsec != 0) {
+         // Calculate the time slice in seconds since the last execution
+         tankMon_.tank.secondsOn = (float)(current_time.tv_sec - previous_time.tv_sec) +
+                                       (float)(current_time.tv_nsec - previous_time.tv_nsec) / 1.0e9f;
+      } else {
+         // This is the first execution; initialize secondsOn to 0
+         tankMon_.tank.secondsOn = 0.0f;
+      }
+
+      // Update the previous timestamp to the current time
+      previous_time = current_time;
+      // Populate the log structure
+      log_.log.Controller = 5;
+      log_.log.Zone = 0;
+      log_.log.pressurePSI = tankMon_.tank.water_height;
+      log_.log.temperatureF = tankMon_.tank.temperatureF;
+      log_.log.intervalFlow = tankMon_.tank.intervalFlow;
+      log_.log.amperage = wellSens_.well.adc_x5;
+      log_.log.secondsOn = tankMon_.tank.secondsOn ;
+      log_.log.gallonsTank = tankMon_.tank.tank_gallons;
+      
+      publishLogMessage(client, &log_, "tank");
+      
       if (training_mode && pumpState == ON) {
          FILE *file = fopen(training_filename, "a");
          if (file != NULL) {
@@ -280,37 +266,22 @@ uint8_t window_size = 40; // Change this value to the desired window size (60-10
 
 float GallonsInTankPress(void) {
    float waterHeight = 0;
-   float PresSensorLSB = .00322580645; // lsb voltage value from datasheet
-  
    float PresSensorValue = 0;
    float PresSensorRawValue = 0;
 
-   float ConstantX = 4.7359; // Used Excel Polynomial Fitting to come up with equation
-   float Constant = 3.6869;
+   float ConstantX = 3.6557; // Used Excel Polynomial Fitting to come up with equation
+   float Constant = 1.2205;
+   
 
-   // Set initial state and state covariance for Kalman filter
-   x = 0;
-   P = 1;
    /*
    * Convert Raw hydrostatic Pressure Sensor
    * A/D to Water Height, Gallons & Percent Full
    */
 
-   PresSensorRawValue = tankSens_.tank.adc_sensor * PresSensorLSB;
-   
-   /*
-      * Kalman Filter to smooth the hydrostatic sensor readings
-      */
-
-   z = PresSensorRawValue;
-   //printf("z: %f\n", z);  // Print updated state
-   predict();
-   update();
-   //printf("x: %f\n", x);  // Print updated state
-   PresSensorValue = x;
+   PresSensorRawValue = wellSens_.well.adc_x5;
            
-   PresSensorValue = moving_average(x, samples, &sample_index, window_size);
-   //printf("Sample: %f, Moving average: %f\n", x, PresSensorValue);
+   PresSensorValue = moving_average(PresSensorRawValue, samples, &sample_index, window_size);
+   printf("Sample: %d, Raw Pressure Sensor: %f Moving average Sensor: %f\n", sample_index, PresSensorRawValue, PresSensorValue);
    /*
       *** Use the Equation y=Constandx(x) + Constant solve for x to compute Water Height in tank
       */
@@ -322,23 +293,11 @@ float GallonsInTankPress(void) {
 */
    //WaterHeight = ((PresSensorValue - ConstantX) / Constant) + .1; // The .1 accounts for the sensor not sitting on the bottom
    //printf("PresSensorValue: %f, ConstantX: %f, Constant: %f\n", PresSensorValue, ConstantX, Constant );
-   waterHeight = ((PresSensorValue*ConstantX) - Constant) + .33; 
+   waterHeight = ((PresSensorValue*ConstantX) - Constant) ; 
    //printf("Water Height = %f\n", waterHeight);
    
    return waterHeight;
 
-}
-
-// Update the Kalman filter with a new sensor measurement
-void updateKalmanFilter(KalmanFilter* filter, double measurement, double measurementError) {
-    // Update the estimate based on the measurement and its error
-    filter->value = filter->value + filter->gain * (measurement - filter->value);
-
-    // Update the estimation error
-    filter->error = (1.0 - filter->gain) * filter->error + filter->gain * measurementError;
-
-    // Calculate the new Kalman gain for the next iteration
-    filter->gain = filter->error / (filter->error + measurementError);
 }
 
 void MyMQTTSetup(char* mqtt_address){
@@ -371,29 +330,34 @@ void MyMQTTSetup(char* mqtt_address){
       printf("Failed to connect, return code %d\n", rc);
       log_message("TankMonitor: Error == Failed to Connect. Return Code: %d\n", rc);
       rc = EXIT_FAILURE;
-      exit(EXIT_FAILURE);
-   }
-   
-   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", TANKSENS_TOPICID, TANKSENS_CLIENTID, QOS);
-   log_message("TankMonitor: Subscribing to topic: %s for client: %s\n", TANKSENS_TOPICID, TANKSENS_CLIENTID);
-   MQTTClient_subscribe(client, TANKSENS_TOPICID, QOS);
-
-   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLMON_TOPICID, WELLMON_CLIENTID,  QOS);
-   log_message("TankMonitor: Subscribing to topic: %s for client: %s\n", WELLMON_TOPICID, WELLMON_CLIENTID );
-   MQTTClient_subscribe(client, WELLMON_TOPICID, QOS);
+        exit(EXIT_FAILURE);
+    }
+    
+    // Subscribe to required topics
+    printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", 
+           WELLSENS_TOPICID, WELLSENS_CLIENTID, QOS);
+    log_message("TankMonitor: Subscribing to topic: %s for client: %s\n", 
+                WELLSENS_TOPICID, WELLSENS_CLIENTID);
+    MQTTClient_subscribe(client, WELLSENS_TOPICID, QOS);
+    
+    printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", 
+           WELLMON_TOPICID, WELLMON_CLIENTID, QOS);
+    log_message("TankMonitor: Subscribing to topic: %s for client: %s\n", 
+                WELLMON_TOPICID, WELLMON_CLIENTID);
+    MQTTClient_subscribe(client, WELLMON_TOPICID, QOS);
 }
 void MyMQTTPublish() {
-   int rc;
+    int rc;
    int i;
-   time_t t;
-   time(&t);
+    time_t t;
+    time(&t);
 
-   if (verbose) {
+    if (verbose) {
       for (i=0; i<=TANKMON_LEN-1; i++) {
          printf("%f ", tankMon_.data_payload[i]);
-      }
-      printf("%s", ctime(&t));
-   }
+        }
+        printf("%s", ctime(&t));
+    }
    pubmsg.payload = tankMon_.data_payload;
    pubmsg.payloadlen = TANKMON_LEN * 4;
    pubmsg.qos = QOS;
@@ -404,8 +368,8 @@ void MyMQTTPublish() {
       printf("Failed to publish message, return code %d\n", rc);
       log_message("TankMonitor: Error == Failed to Publish Message. Return Code: %d\n", rc);
       rc = EXIT_FAILURE;
-   }
-
+    }
+    
 
 json_object *root = json_object_new_object();
 for (i=0; i<=TANKMON_LEN-1; i++) {

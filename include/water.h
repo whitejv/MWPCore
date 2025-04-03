@@ -174,8 +174,8 @@ int SubFirmware = 0x80FF;
  *** GPIO12 - //Good - Config 1 - Input w/ pull-up
  *** GPIO13 - //Good - Flow Sensor
  *** GPIO14 - //Good - Config 3 - Input w/ pull-up
- *** GPIO15 - //Good - Disc 1 (no pull-up)
- *** GPIO16 - //Good - Disc 2 (no pull-up)
+ *** GPIO15 - //Good - Disc 1 (no pull-up)(Required for boot, boot fails if pulled HIGH)
+ *** GPIO16 - //Good - Disc 2 (no pull-up) (no interrupt)
 ******************************************************/
 /******************************************************
  ******************************************************
@@ -234,84 +234,88 @@ int	flow_data_payload[10] ; //must match messagelen below
 * Type: data
 * MQTT Client ID: Generic Flow Client
 * MQTT Topic ID: 
-* MSG Length: 25
+* MSG Length: 26
 *  word #        data type            variable                description        min        max        nominal
-*  0        int            pulse_count                Pulses Counted in Time Window        0        5000        20
-*  1        int            milliseconds                Number of milliseconds in Time Window        0        10000        2000
-*  2        int            new_data_flag                Flag 1=new data 0=stale data        0        1        1
+*  0        int            flowData1                flow sensor 1        0        0        0
+*  1        int            flowData2                flow sensor 2        0        0        0
+*  2        int            flowData3                flow sensor 3        0        0        0
 *  3        int            adc_sensor                ADC Raw Sensor value: Bit 0-9 (0-1023)        0        1023        512
 *  4        int            gpio_sensor                GPIO Sensor Data: Bit 1: GPIO 4, Bit 2: GPIO 5        0        3        3
-*  5        int            temp                Temp f (int)        -32        150        80
-*  6        int            temp_w1                Temperature in F Float Bytes 1&2                        
-*  7        int            spare                spare                        
+*  5        int            temp1                Temp f (int)        -32        150        80
+*  6        int            temp1_f                Temperature in F Float Bytes 1&2                        
+*  7        int            tempSensorcount                spare                        
 *  8        int            cycle_count                 Cycle Counter        0        28800        
 *  9        int            fw_version                 FW Version 4 Hex                         
-*  10        int            adc_x1                extended sensor adc - 1                        
-*  11        int            adc_x2                extended sensor adc - 2                        
-*  12        int            adc_x3                extended sensor adc - 3                        
-*  13        int            adc_x4                extended sensor adc - 4                        
-*  14        int            adc_x5                extended sensor adc - 5                        
-*  15        int            adc_x6                extended sensor adc - 6                        
-*  16        int            adc_x7                extended sensor adc - 7                        
-*  17        int            adc_x8                extended sensor adc - 8                        
-*  18        int            GPIO_x1                estended sensor GPIO - 1                        
-*  19        int            GPIO_x2                estended sensor GPIO - 2                        
-*  20        int            tempx                temp f (int) extended Sensor                        
-*  21        int            tempx_f                temp f float                        
-*  22        int            pressurex                pressure extended sensor                        
-*  23        int            pressurex_f                pressure float                        
-*  24        int            humidity                humidity                        
+*  10        int            GPIO_x1                estended sensor GPIO - 1                        
+*  11        int            GPIO_x2                estended sensor GPIO - 2                        
+*  12        float            adc_x1                extended sensor adc - 1                        
+*  13        float            adc_x2                extended sensor adc - 2                        
+*  14        float            adc_x3                extended sensor adc - 3                        
+*  15        float            adc_x4                extended sensor adc - 4                        
+*  16        float            adc_x5                extended sensor adc - 5                        
+*  17        float            adc_x6                extended sensor adc - 6                        
+*  18        float            adc_x7                extended sensor adc - 7                        
+*  19        float            adc_x8                extended sensor adc - 8                        
+*  20        float            tempx                temp f (int) extended Sensor                        
+*  21        float            pressurex                pressure extended sensor                        
+*  22        float            humidity                humidity                        
+*  23        float            temp2                Temp sensor 2        -32        125        99
+*  24        float            temp3                Temp sensor 3        -32        125        99
+*  25        float            temp4                Temp sensor 4        -32        125        99
 */
 
 const char GENERICSENS_CLIENTID[] =    "Generic Flow Client" ;
 const char GENERICSENS_TOPICID[] =  "mwp/data/sensor/generic/X001D";
 const char GENERICSENS_JSONID[] =  "mwp/json/data/sensor/generic/X001D";
-#define GENERICSENS_LEN 25
+#define GENERICSENS_LEN 26
 
 union   GENERICSENS_  {
    int     data_payload[GENERICSENS_LEN] ;
 
    struct  {
-      int   pulse_count    ;
-      int   milliseconds    ;
-      int   new_data_flag    ;
-      int   adc_sensor    ;
-      int   gpio_sensor    ;
-      int   temp    ;
-      int   temp_w1    ;
-      int   spare    ;
-      int   cycle_count    ;
-      int   fw_version    ;
-      int   adc_x1    ;
-      int   adc_x2    ;
-      int   adc_x3    ;
-      int   adc_x4    ;
-      int   adc_x5    ;
-      int   adc_x6    ;
-      int   adc_x7    ;
-      int   adc_x8    ;
-      int   GPIO_x1    ;
-      int   GPIO_x2    ;
-      int   tempx    ;
-      int   tempx_f    ;
-      int   pressurex    ;
-      int   pressurex_f    ;
-      int   humidity    ;
+      int   flowData1	;		//   Well 3 Flow
+      int   flowData2	;		//   Irrigation Flow
+      int   flowData3	;		//   spare
+      int   adc_sensor	;		//   water pressure (psi)
+      int   gpio_sensor	;		//   GPIO discretes
+      int   temp1	;		//   xxx Temp
+      int   temp1_f	;		//   xxx Temp in floating point
+      int   tempSensorcount	;		//   Number of Temp Sensors Detected
+      int   cycle_count	;		//   Cycle Counter
+      int   fw_version	;		//   FW Version
+      int   GPIO_x1	;		//   Discrete IN 
+      int   GPIO_x2	;		//   Discrete OUT
+      float   adc_x1	;		//   xxx Pump amperage on/off
+      float   adc_x2	;		//   xxx Pump amperage on/off
+      float   adc_x3	;		//   xxx Pump amperage on/off
+      float   adc_x4	;		//   xxx Pump amperage on/off
+      float   adc_x5	;		//   Tank Hydrostatic Pressure
+      float   adc_x6	;		//   xxx Water Pressure 
+      float   adc_x7	;		//   xxx Water Pressure 
+      float   adc_x8	;		//   xxx Water Pressure 
+      float   tempx	;		//   System Temp
+      float   pressurex	;		//   Atmospheric Pressure
+      float   humidity	;		//   % Humididity
+      float   temp2	;		//   xxx Temp
+      float   temp3	;		//   xxx Temp
+      float   temp4	;		//   xxx Temp
    }  generic  ;
 }  ;
 union  GENERICSENS_  genericSens_  ;
 
 char* genericsens_ClientData_var_name [] = { 
-    "X001D:pulse_count",
-    "X001D:milliseconds",
-    "X001D:new_data_flag",
+    "X001D:flowData1",
+    "X001D:flowData2",
+    "X001D:flowData3",
     "X001D:adc_sensor",
     "X001D:gpio_sensor",
-    "X001D:temp",
-    "X001D:temp_w1",
-    "X001D:spare",
+    "X001D:temp1",
+    "X001D:temp1_f",
+    "X001D:tempSensorcount",
     "X001D:cycle_count",
     "X001D:fw_version",
+    "X001D:GPIO_x1",
+    "X001D:GPIO_x2",
     "X001D:adc_x1",
     "X001D:adc_x2",
     "X001D:adc_x3",
@@ -320,13 +324,12 @@ char* genericsens_ClientData_var_name [] = {
     "X001D:adc_x6",
     "X001D:adc_x7",
     "X001D:adc_x8",
-    "X001D:GPIO_x1",
-    "X001D:GPIO_x2",
     "X001D:tempx",
-    "X001D:tempx_f",
     "X001D:pressurex",
-    "X001D:pressurex_f",
     "X001D:humidity",
+    "X001D:temp2",
+    "X001D:temp3",
+    "X001D:temp4",
 }  ;
 
 /*
@@ -361,16 +364,16 @@ union   IRRIGATIONSENS_  {
    int     data_payload[IRRIGATIONSENS_LEN] ;
 
    struct  {
-      int   pulse_count    ;
-      int   milliseconds    ;
-      int   new_data_flag    ;
-      int   adc_sensor    ;
-      int   gpio_sensor    ;
-      int   temp    ;
-      int   temp_w1    ;
-      int   temp_w2    ;
-      int   cycle_count    ;
-      int   fw_version    ;
+      int   pulse_count	;		//   
+      int   milliseconds	;		//   
+      int   new_data_flag	;		//   
+      int   adc_sensor	;		//   irrigation water pressure (psi)
+      int   gpio_sensor	;		//   0=on; 1=off; Tank Overflow, Tank Empty floats
+      int   temp	;		//   pump temp
+      int   temp_w1	;		//   
+      int   temp_w2	;		//   
+      int   cycle_count	;		//   
+      int   fw_version	;		//   
    }  irrigation  ;
 }  ;
 union  IRRIGATIONSENS_  irrigationSens_  ;
@@ -420,16 +423,16 @@ union   TANKSENS_  {
    int     data_payload[TANKSENS_LEN] ;
 
    struct  {
-      int   pulse_count    ;
-      int   milliseconds    ;
-      int   new_data_flag    ;
-      int   adc_sensor    ;
-      int   gpio_sensor    ;
-      int   temp    ;
-      int   temp_w1    ;
-      int   temp_w2    ;
-      int   cycle_count    ;
-      int   fw_version    ;
+      int   pulse_count	;		//   
+      int   milliseconds	;		//   
+      int   new_data_flag	;		//   
+      int   adc_sensor	;		//   hydrostatic pressure water depth
+      int   gpio_sensor	;		//   0=on; 1=off
+      int   temp	;		//   water temp
+      int   temp_w1	;		//   
+      int   temp_w2	;		//   
+      int   cycle_count	;		//   
+      int   fw_version	;		//   
    }  tank  ;
 }  ;
 union  TANKSENS_  tankSens_  ;
@@ -479,16 +482,16 @@ union   HOUSESENS_  {
    int     data_payload[HOUSESENS_LEN] ;
 
    struct  {
-      int   pulse_count    ;
-      int   milliseconds    ;
-      int   new_data_flag    ;
-      int   adc_sensor    ;
-      int   gpio_sensor    ;
-      int   temp    ;
-      int   temp_w1    ;
-      int   temp_w2    ;
-      int   cycle_count    ;
-      int   fw_version    ;
+      int   pulse_count	;		//   
+      int   milliseconds	;		//   
+      int   new_data_flag	;		//   
+      int   adc_sensor	;		//   house water pressure (psi)
+      int   gpio_sensor	;		//   0=on; 1=off
+      int   temp	;		//   air temp
+      int   temp_w1	;		//   
+      int   temp_w2	;		//   
+      int   cycle_count	;		//   
+      int   fw_version	;		//   
    }  house  ;
 }  ;
 union  HOUSESENS_  houseSens_  ;
@@ -538,16 +541,16 @@ union   WELL3SENS_  {
    int     data_payload[WELL3SENS_LEN] ;
 
    struct  {
-      int   pulse_count    ;
-      int   milliseconds    ;
-      int   new_data_flag    ;
-      int   adc_sensor    ;
-      int   gpio_sensor    ;
-      int   temp    ;
-      int   temp_w1    ;
-      int   temp_w2    ;
-      int   cycle_count    ;
-      int   fw_version    ;
+      int   pulse_count	;		//   
+      int   milliseconds	;		//   
+      int   new_data_flag	;		//   
+      int   adc_sensor	;		//   
+      int   gpio_sensor	;		//   0=on; 1=off
+      int   temp	;		//   
+      int   temp_w1	;		//   
+      int   temp_w2	;		//   
+      int   cycle_count	;		//   
+      int   fw_version	;		//   
    }  well3  ;
 }  ;
 union  WELL3SENS_  well3Sens_  ;
@@ -574,84 +577,88 @@ char* well3sens_ClientData_var_name [] = {
 * Type: data
 * MQTT Client ID: Well Flow Client
 * MQTT Topic ID: 
-* MSG Length: 25
+* MSG Length: 31
 *  word #        data type            variable                description        min        max        nominal
-*  0        int            pulse_count                Pulses Counted in Time Window        0        5000        20
-*  1        int            milliseconds                Number of milliseconds in Time Window        0        10000        2000
-*  2        int            new_data_flag                Flag 1=new data 0=stale data        0        1        1
+*  0        int            flowData1                flow sensor 1        0        0        0
+*  1        int            flowData2                flow sensor 2        0        0        0
+*  2        int            flowData3                flow sensor 3        0        0        0
 *  3        int            adc_sensor                ADC Raw Sensor value: Bit 0-9 (0-1023)        0        1023        512
 *  4        int            gpio_sensor                GPIO Sensor Data: Bit 1: GPIO 4, Bit 2: GPIO 5        0        3        3
-*  5        int            temp                Temp f (int)        -32        150        80
-*  6        int            temp_w1                Temperature in F Float Bytes 1&2                        
-*  7        int            spare                spare                        
+*  5        int            temp1                Temp f (int)        -32        150        80
+*  6        int            temp1_f                Temperature in F Float Bytes 1&2                        
+*  7        int            tempSensorcount                spare                        
 *  8        int            cycle_count                 Cycle Counter        0        28800        
 *  9        int            fw_version                 FW Version 4 Hex                         
-*  10        int            adc_x1                Current Sense for Well #1                        
-*  11        int            adc_x2                Current Sense for Well #2                        
-*  12        int            adc_x3                Current Sense for Well #3                        
-*  13        int            adc_x4                Current Sense for Irrigation                        
-*  14        int            adc_x5                extended sensor adc - 5                        
-*  15        int            adc_x6                extended sensor adc - 6                        
-*  16        int            adc_x7                extended sensor adc - 7                        
-*  17        int            adc_x8                extended sensor adc - 8                        
-*  18        int            GPIO_x1                estended sensor GPIO - 1                        
-*  19        int            GPIO_x2                estended sensor GPIO - 2                        
-*  20        int            tempx                temp f (int) extended Sensor                        
-*  21        int            tempx_f                temp f float                        
-*  22        int            pressurex                pressure extended sensor                        
-*  23        int            pressurex_f                pressure float                        
-*  24        int            humidity                humidity                        
+*  10        int            GPIO_x1                estended sensor GPIO - 1                        
+*  11        int            GPIO_x2                estended sensor GPIO - 2                        
+*  12        float            adc_x1                extended sensor adc - 1                        
+*  13        float            adc_x2                extended sensor adc - 2                        
+*  14        float            adc_x3                extended sensor adc - 3                        
+*  15        float            adc_x4                extended sensor adc - 4                        
+*  16        float            adc_x5                extended sensor adc - 5                        
+*  17        float            adc_x6                extended sensor adc - 6                        
+*  18        float            adc_x7                extended sensor adc - 7                        
+*  19        float            adc_x8                extended sensor adc - 8                        
+*  20        float            tempx                temp f (int) extended Sensor                        
+*  21        float            pressurex                pressure extended sensor                        
+*  22        float            humidity                humidity                        
+*  23        float            temp2                Temp sensor 2        -32        125        99
+*  24        float            temp3                Temp sensor 3        -32        125        99
+*  25        float            temp4                Temp sensor 4        -32        125        99
 */
 
 const char WELLSENS_CLIENTID[] =    "Well Flow Client" ;
 const char WELLSENS_TOPICID[] =  "mwp/data/sensor/well/S005D";
 const char WELLSENS_JSONID[] =  "mwp/json/data/sensor/well/S005D";
-#define WELLSENS_LEN 25
+#define WELLSENS_LEN 26
 
 union   WELLSENS_  {
    int     data_payload[WELLSENS_LEN] ;
 
    struct  {
-      int   pulse_count    ;
-      int   milliseconds    ;
-      int   new_data_flag    ;
-      int   adc_sensor    ;
-      int   gpio_sensor    ;
-      int   temp    ;
-      int   temp_w1    ;
-      int   spare    ;
-      int   cycle_count    ;
-      int   fw_version    ;
-      int   adc_x1    ;
-      int   adc_x2    ;
-      int   adc_x3    ;
-      int   adc_x4    ;
-      int   adc_x5    ;
-      int   adc_x6    ;
-      int   adc_x7    ;
-      int   adc_x8    ;
-      int   GPIO_x1    ;
-      int   GPIO_x2    ;
-      int   tempx    ;
-      int   tempx_f    ;
-      int   pressurex    ;
-      int   pressurex_f    ;
-      int   humidity    ;
+      int   flowData1	;		//   Well 3 Flow
+      int   flowData2	;		//   Irrigation Flow
+      int   flowData3	;		//   spare
+      int   adc_sensor	;		//   water pressure (psi)
+      int   gpio_sensor	;		//   GPIO discretes
+      int   temp1	;		//   xxx Temp
+      int   temp1_f	;		//   xxx Temp in floating point
+      int   tempSensorcount	;		//   Number of Temp Sensors Detected
+      int   cycle_count	;		//   Cycle Counter
+      int   fw_version	;		//   FW Version
+      int   GPIO_x1	;		//   Discrete IN 
+      int   GPIO_x2	;		//   Discrete OUT
+      float   adc_x1	;		//   xxx Pump amperage on/off
+      float   adc_x2	;		//   xxx Pump amperage on/off
+      float   adc_x3	;		//   xxx Pump amperage on/off
+      float   adc_x4	;		//   xxx Pump amperage on/off
+      float   adc_x5	;		//   Tank Hydrostatic Pressure
+      float   adc_x6	;		//   xxx Water Pressure 
+      float   adc_x7	;		//   xxx Water Pressure 
+      float   adc_x8	;		//   xxx Water Pressure 
+      float   tempx	;		//   System Temp
+      float   pressurex	;		//   Atmospheric Pressure
+      float   humidity	;		//   % Humididity
+      float   temp2	;		//   xxx Temp
+      float   temp3	;		//   xxx Temp
+      float   temp4	;		//   xxx Temp
    }  well  ;
 }  ;
 union  WELLSENS_  wellSens_  ;
 
 char* wellsens_ClientData_var_name [] = { 
-    "S005D:pulse_count",
-    "S005D:milliseconds",
-    "S005D:new_data_flag",
+    "S005D:flowData1",
+    "S005D:flowData2",
+    "S005D:flowData3",
     "S005D:adc_sensor",
     "S005D:gpio_sensor",
-    "S005D:temp",
-    "S005D:temp_w1",
-    "S005D:spare",
+    "S005D:temp1",
+    "S005D:temp1_f",
+    "S005D:tempSensorcount",
     "S005D:cycle_count",
     "S005D:fw_version",
+    "S005D:GPIO_x1",
+    "S005D:GPIO_x2",
     "S005D:adc_x1",
     "S005D:adc_x2",
     "S005D:adc_x3",
@@ -660,13 +667,12 @@ char* wellsens_ClientData_var_name [] = {
     "S005D:adc_x6",
     "S005D:adc_x7",
     "S005D:adc_x8",
-    "S005D:GPIO_x1",
-    "S005D:GPIO_x2",
     "S005D:tempx",
-    "S005D:tempx_f",
     "S005D:pressurex",
-    "S005D:pressurex_f",
     "S005D:humidity",
+    "S005D:temp2",
+    "S005D:temp3",
+    "S005D:temp4",
 }  ;
 
 /*
@@ -693,8 +699,8 @@ union   IRRIGATIONCOMMAND_  {
    int     data_payload[IRRIGATIONCOMMAND_LEN] ;
 
    struct  {
-      int   command    ;
-      int   command_data_w1    ;
+      int   command	;		//   
+      int   command_data_w1	;		//   
    }  irrigation  ;
 }  ;
 union  IRRIGATIONCOMMAND_  irrigationCommand_  ;
@@ -728,8 +734,8 @@ union   IRRIGATIONRESPONSE_  {
    int     data_payload[IRRIGATIONRESPONSE_LEN] ;
 
    struct  {
-      int   command_response_w1    ;
-      int   command_response_w2    ;
+      int   command_response_w1	;		//   
+      int   command_response_w2	;		//   
    }  irrigation  ;
 }  ;
 union  IRRIGATIONRESPONSE_  irrigationResponse_  ;
@@ -777,22 +783,22 @@ union   IRRIGATIONMON_  {
    float     data_payload[IRRIGATIONMON_LEN] ;
 
    struct  {
-      float   pressurePSI    ;
-      float   temperatureF    ;
-      float   intervalFlow    ;
-      float   amperage    ;
-      float   secondsOn    ;
-      float   gallonsMinute    ;
-      float   gallonsDay    ;
-      float   controller    ;
-      float   zone    ;
-      float   spare1    ;
-      float   spare2    ;
-      float   spare3    ;
-      float   spare4    ;
-      float   spare5    ;
-      float   cycleCount    ;
-      float   fwVersion    ;
+      float   pressurePSI	;		//   Irrigation Flow GPM
+      float   temperatureF	;		//   Total Gallons Flowed in 24 hours
+      float   intervalFlow	;		//   Irrigation Pressure
+      float   amperage	;		//   house water pressure (psi)
+      float   secondsOn	;		//   for Calculating Pump Run Times
+      float   gallonsMinute	;		//   Rainbird ESP Controller 1=Front 2=Back
+      float   gallonsDay	;		//   Rainbird Zone
+      float   controller	;		//   
+      float   zone	;		//   
+      float   spare1	;		//   
+      float   spare2	;		//   
+      float   spare3	;		//   
+      float   spare4	;		//   
+      float   spare5	;		//   
+      float   cycleCount	;		//   
+      float   fwVersion	;		//   
    }  irrigation  ;
 }  ;
 union  IRRIGATIONMON_  irrigationMon_  ;
@@ -839,7 +845,7 @@ union   RAINBIRDCOMMAND_  {
    char     data_payload[RAINBIRDCOMMAND_LEN] ;
 
    struct  {
-      char   command[7]    ;
+      char   command[7]	;		//   Text "check1" or "check2"
    }  rainbirdpy  ;
 }  ;
 union  RAINBIRDCOMMAND_  rainbirdCommand_  ;
@@ -871,7 +877,7 @@ union   RAINBIRDRESPONSE_  {
    char     data_payload[RAINBIRDRESPONSE_LEN] ;
 
    struct  {
-      char   command_response[255]    ;
+      char   command_response[255]	;		//   
    }  rainbirdpy  ;
 }  ;
 union  RAINBIRDRESPONSE_  rainbirdResponse_  ;
@@ -918,22 +924,22 @@ union   TANKMON_  {
    float     data_payload[TANKMON_LEN] ;
 
    struct  {
-      float   pressurePSI    ;
-      float   temperatureF    ;
-      float   intervalFlow    ;
-      float   amperage    ;
-      float   secondsOn    ;
-      float   gallonsMinute    ;
-      float   gallonsDay    ;
-      float   controller    ;
-      float   zone    ;
-      float   water_height    ;
-      float   tank_gallons    ;
-      float   tank_per_full    ;
-      float   float1    ;
-      float   float2    ;
-      float   cycleCount    ;
-      float   fwVersion    ;
+      float   pressurePSI	;		//   
+      float   temperatureF	;		//   
+      float   intervalFlow	;		//   
+      float   amperage	;		//   
+      float   secondsOn	;		//   for Calculating Pump Run Times
+      float   gallonsMinute	;		//   
+      float   gallonsDay	;		//   
+      float   controller	;		//   
+      float   zone	;		//   
+      float   water_height	;		//   
+      float   tank_gallons	;		//   
+      float   tank_per_full	;		//   
+      float   float1	;		//   
+      float   float2	;		//   
+      float   cycleCount	;		//   
+      float   fwVersion	;		//   
    }  tank  ;
 }  ;
 union  TANKMON_  tankMon_  ;
@@ -995,22 +1001,22 @@ union   HOUSEMON_  {
    float     data_payload[HOUSEMON_LEN] ;
 
    struct  {
-      float   pressurePSI    ;
-      float   temperatureF    ;
-      float   intervalFlow    ;
-      float   amperage    ;
-      float   secondsOn    ;
-      float   gallonsMinute    ;
-      float   gallonsDay    ;
-      float   controller    ;
-      float   zone    ;
-      float   spare1    ;
-      float   spare2    ;
-      float   spare3    ;
-      float   spare4    ;
-      float   spare5    ;
-      float   cycleCount    ;
-      float   fwVersion    ;
+      float   pressurePSI	;		//   
+      float   temperatureF	;		//   
+      float   intervalFlow	;		//   
+      float   amperage	;		//   
+      float   secondsOn	;		//   for Calculating Pump Run Times
+      float   gallonsMinute	;		//   
+      float   gallonsDay	;		//   
+      float   controller	;		//   
+      float   zone	;		//   
+      float   spare1	;		//   
+      float   spare2	;		//   
+      float   spare3	;		//   
+      float   spare4	;		//   
+      float   spare5	;		//   
+      float   cycleCount	;		//   
+      float   fwVersion	;		//   
    }  house  ;
 }  ;
 union  HOUSEMON_  houseMon_  ;
@@ -1074,24 +1080,24 @@ union   WELLMON_  {
    float     data_payload[WELLMON_LEN] ;
 
    struct  {
-      float   well_pump_1_on    ;
-      float   well_pump_2_on    ;
-      float   well_pump_3_on    ;
-      float   irrigation_pump_on    ;
-      float   house_water_pressure    ;
-      float   system_temp    ;
-      float   House_tank_pressure_switch_on    ;
-      float   septic_alert_on    ;
-      float   cycle_count    ;
-      float   fw_version    ;
-      float   amp_pump_1    ;
-      float   amp_pump_2    ;
-      float   amp_pump_3    ;
-      float   amp_pump_4    ;
-      float   amp_5    ;
-      float   amp_6    ;
-      float   amp_7    ;
-      float   amp_8    ;
+      float   well_pump_1_on	;		//   
+      float   well_pump_2_on	;		//   
+      float   well_pump_3_on	;		//   
+      float   irrigation_pump_on	;		//   
+      float   house_water_pressure	;		//   
+      float   system_temp	;		//   
+      float   House_tank_pressure_switch_on	;		//   
+      float   septic_alert_on	;		//   
+      float   cycle_count	;		//   
+      float   fw_version	;		//   
+      float   amp_pump_1	;		//   
+      float   amp_pump_2	;		//   
+      float   amp_pump_3	;		//   
+      float   amp_pump_4	;		//   
+      float   amp_5	;		//   
+      float   amp_6	;		//   
+      float   amp_7	;		//   
+      float   amp_8	;		//   
    }  well  ;
 }  ;
 union  WELLMON_  wellMon_  ;
@@ -1155,22 +1161,22 @@ union   WELL3MON_  {
    float     data_payload[WELL3MON_LEN] ;
 
    struct  {
-      float   pressurePSI    ;
-      float   temperatureF    ;
-      float   intervalFlow    ;
-      float   amperage    ;
-      float   secondsOn    ;
-      float   gallonsMinute    ;
-      float   gallonsDay    ;
-      float   controller    ;
-      float   zone    ;
-      float   spare1    ;
-      float   spare2    ;
-      float   spare3    ;
-      float   spare4    ;
-      float   spare5    ;
-      float   cycleCount    ;
-      float   fwVersion    ;
+      float   pressurePSI	;		//   
+      float   temperatureF	;		//   
+      float   intervalFlow	;		//   
+      float   amperage	;		//   
+      float   secondsOn	;		//   for Calculating Pump Run Times
+      float   gallonsMinute	;		//   
+      float   gallonsDay	;		//   
+      float   controller	;		//   
+      float   zone	;		//   
+      float   spare1	;		//   
+      float   spare2	;		//   
+      float   spare3	;		//   
+      float   spare4	;		//   
+      float   spare5	;		//   
+      float   cycleCount	;		//   
+      float   fwVersion	;		//   
    }  well3  ;
 }  ;
 union  WELL3MON_  well3Mon_  ;
@@ -1246,36 +1252,36 @@ union   MONITOR_  {
    float     data_payload[MONITOR_LEN] ;
 
    struct  {
-      float   Tank_Water_Height    ;
-      float   Tank_Gallons    ;
-      float   Tank_Percent_Full    ;
-      float   House_Pressure    ;
-      float   Well3_Pressure    ;
-      float   Irrigation_Pressure    ;
-      float   House_Gallons_Minute    ;
-      float   Well3_Gallons_Minute    ;
-      float   Irrigation_Gallons_Minute    ;
-      float   House_Gallons_Day    ;
-      float   Well3_Gallons_Day    ;
-      float   Irrigation_Gallons_Day    ;
-      float   System_Temp    ;
-      float   House_Water_Temp    ;
-      float   Irrigation_Pump_Temp    ;
-      float   Air_Temp    ;
-      float   Spare1    ;
-      float   Spare2    ;
-      float   Well_1_LED_Bright    ;
-      float   Well_2_LED_Bright    ;
-      float   Well_3_LED_Bright    ;
-      float   Irrig_4_LED_Bright    ;
-      float   Spare1_LED_Bright    ;
-      float   Spare2_LED_Bright    ;
-      float   Well_1_LED_Color    ;
-      float   Well_2_LED_Color    ;
-      float   Well_3_LED_Color    ;
-      float   Irrig_4_LED_Color    ;
-      float   Controller    ;
-      float   Zone    ;
+      float   Tank_Water_Height	;		//   
+      float   Tank_Gallons	;		//   
+      float   Tank_Percent_Full	;		//   
+      float   House_Pressure	;		//   
+      float   Well3_Pressure	;		//   
+      float   Irrigation_Pressure	;		//   
+      float   House_Gallons_Minute	;		//   
+      float   Well3_Gallons_Minute	;		//   
+      float   Irrigation_Gallons_Minute	;		//   
+      float   House_Gallons_Day	;		//   
+      float   Well3_Gallons_Day	;		//   
+      float   Irrigation_Gallons_Day	;		//   
+      float   System_Temp	;		//   
+      float   House_Water_Temp	;		//   
+      float   Irrigation_Pump_Temp	;		//   
+      float   Air_Temp	;		//   
+      float   Spare1	;		//   
+      float   Spare2	;		//   
+      float   Well_1_LED_Bright	;		//   
+      float   Well_2_LED_Bright	;		//   
+      float   Well_3_LED_Bright	;		//   
+      float   Irrig_4_LED_Bright	;		//   
+      float   Spare1_LED_Bright	;		//   
+      float   Spare2_LED_Bright	;		//   
+      float   Well_1_LED_Color	;		//   
+      float   Well_2_LED_Color	;		//   
+      float   Well_3_LED_Color	;		//   
+      float   Irrig_4_LED_Color	;		//   
+      float   Controller	;		//   
+      float   Zone	;		//   
    }  monitor  ;
 }  ;
 union  MONITOR_  monitor_  ;
@@ -1375,46 +1381,46 @@ union   ALERT_  {
    int     data_payload[ALERT_LEN] ;
 
    struct  {
-      int   Alert1    ;
-      int   Alert2     ;
-      int   Alert3    ;
-      int   Alert4    ;
-      int   Alert5    ;
-      int   Alert6    ;
-      int   Alert7    ;
-      int   Alert8    ;
-      int   Alert9    ;
-      int   Alert10    ;
-      int   Alert11    ;
-      int   Alert12    ;
-      int   Alert13    ;
-      int   Alert14    ;
-      int   Alert15    ;
-      int   Alert16    ;
-      int   Alert17    ;
-      int   Alert18    ;
-      int   Alert19    ;
-      int   Alert20    ;
-      int   Alert21    ;
-      int   Alert22    ;
-      int   Alert23    ;
-      int   Alert24    ;
-      int   Alert25    ;
-      int   Alert26    ;
-      int   Alert27    ;
-      int   Alert28    ;
-      int   Alert29    ;
-      int   Alert30    ;
-      int   Alert31    ;
-      int   Alert32    ;
-      int   Alert33    ;
-      int   Alert34    ;
-      int   Alert35    ;
-      int   Alert36    ;
-      int   Alert37    ;
-      int   Alert38    ;
-      int   Alert39    ;
-      int   Alert40    ;
+      int   Alert1	;		//   
+      int   Alert2 	;		//   
+      int   Alert3	;		//   
+      int   Alert4	;		//   
+      int   Alert5	;		//   
+      int   Alert6	;		//   
+      int   Alert7	;		//   
+      int   Alert8	;		//   
+      int   Alert9	;		//   
+      int   Alert10	;		//   
+      int   Alert11	;		//   
+      int   Alert12	;		//   
+      int   Alert13	;		//   
+      int   Alert14	;		//   
+      int   Alert15	;		//   
+      int   Alert16	;		//   
+      int   Alert17	;		//   
+      int   Alert18	;		//   
+      int   Alert19	;		//   
+      int   Alert20	;		//   
+      int   Alert21	;		//   
+      int   Alert22	;		//   
+      int   Alert23	;		//   
+      int   Alert24	;		//   
+      int   Alert25	;		//   
+      int   Alert26	;		//   
+      int   Alert27	;		//   
+      int   Alert28	;		//   
+      int   Alert29	;		//   
+      int   Alert30	;		//   
+      int   Alert31	;		//   
+      int   Alert32	;		//   
+      int   Alert33	;		//   
+      int   Alert34	;		//   
+      int   Alert35	;		//   
+      int   Alert36	;		//   
+      int   Alert37	;		//   
+      int   Alert38	;		//   
+      int   Alert39	;		//   
+      int   Alert40	;		//   
    }  alert  ;
 }  ;
 union  ALERT_  alert_  ;
@@ -1485,7 +1491,7 @@ union   ALERTCOMMAND_  {
    int     data_payload[ALERTCOMMAND_LEN] ;
 
    struct  {
-      int   clearCommand    ;
+      int   clearCommand	;		//   1=Clear Alerts
    }  blynkalert  ;
 }  ;
 union  ALERTCOMMAND_  alertCommand_  ;
@@ -1536,26 +1542,26 @@ union   LOGGER_  {
    int     data_payload[LOGGER_LEN] ;
 
    struct  {
-      int   pump    ;
-      int   param1    ;
-      int   param2    ;
-      int   intervalFlow    ;
-      int   pressure    ;
-      int   amperage    ;
-      int   temperature    ;
-      int   timestamp    ;
-      int   unused1    ;
-      int   unused2    ;
-      int   unused3    ;
-      int   unused4    ;
-      int   unused5    ;
-      int   unused6    ;
-      int   unused7    ;
-      int   unused8    ;
-      int   unused9    ;
-      int   unused10    ;
-      int   unused11    ;
-      int   unused12    ;
+      int   pump	;		//   
+      int   param1	;		//   
+      int   param2	;		//   
+      int   intervalFlow	;		//   
+      int   pressure	;		//   
+      int   amperage	;		//   
+      int   temperature	;		//   
+      int   timestamp	;		//   
+      int   unused1	;		//   
+      int   unused2	;		//   
+      int   unused3	;		//   
+      int   unused4	;		//   
+      int   unused5	;		//   
+      int   unused6	;		//   
+      int   unused7	;		//   
+      int   unused8	;		//   
+      int   unused9	;		//   
+      int   unused10	;		//   
+      int   unused11	;		//   
+      int   unused12	;		//   
    }  logger  ;
 }  ;
 union  LOGGER_  logger_  ;
@@ -1613,14 +1619,14 @@ union   LOG_  {
    int     data_payload[LOG_LEN] ;
 
    struct  {
-      int   Controller    ;
-      int   Zone    ;
-      float   pressurePSI    ;
-      float   temperatureF    ;
-      float   intervalFlow    ;
-      float   amperage    ;
-      float   secondsOn    ;
-      float   gallonsTank    ;
+      int   Controller	;		//   
+      int   Zone	;		//   
+      float   pressurePSI	;		//   
+      float   temperatureF	;		//   
+      float   intervalFlow	;		//   
+      float   amperage	;		//   
+      float   secondsOn	;		//   
+      float   gallonsTank	;		//   
    }  log  ;
 }  ;
 union  LOG_  log_  ;
@@ -1657,8 +1663,8 @@ struct flowSensorConfigTable flowSensorConfig[8] = {
     {1, "TANK",          TANKSENS_CLIENTID,     TANKSENS_TOPICID,TANKSENS_JSONID, TANKSENS_LEN},
     {2, "IRRIGATION",    IRRIGATIONSENS_CLIENTID, IRRIGATIONSENS_TOPICID, IRRIGATIONSENS_JSONID,IRRIGATIONSENS_LEN},
     {3, "HOUSE",         HOUSESENS_CLIENTID, HOUSESENS_TOPICID, HOUSESENS_JSONID, HOUSESENS_LEN},
-    {4, "WELL",          WELLSENS_CLIENTID, WELLSENS_TOPICID, WELLSENS_JSONID, WELLSENS_LEN},
+    {4, "SPARE",         GENERICSENS_CLIENTID, GENERICSENS_TOPICID , GENERICSENS_JSONID, GENERICSENS_LEN},
     {5, "SPARE",         GENERICSENS_CLIENTID, GENERICSENS_TOPICID , GENERICSENS_JSONID, GENERICSENS_LEN},
-    {6, "SPARE",         GENERICSENS_CLIENTID, GENERICSENS_TOPICID, GENERICSENS_JSONID, GENERICSENS_LEN},
+    {6, "WELL",         WELLSENS_CLIENTID, WELLSENS_TOPICID, WELLSENS_JSONID, WELLSENS_LEN},
     {7, "SPARE",         GENERICSENS_CLIENTID, GENERICSENS_TOPICID, GENERICSENS_JSONID, GENERICSENS_LEN},
 };

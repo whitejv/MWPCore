@@ -42,6 +42,14 @@ float calculateAverageFlowRate() {
 }
 
 void flowmon(int newDataFlag, int milliseconds, int pulseCount, float *pAvgflowRateGPM, float *pintervalFlow, float calibrationFactor) {
+    
+    if (verbose) {
+        printf("oooooooooooooooooooooooooooooooooooooooooooooooooooooooo\n") ;
+        printf("New Data Flag: %d Pulse count: %d, Elapsed time: %d\n", newDataFlag, pulseCount, milliseconds);
+        printf("oooooooooooooooooooooooooooooooooooooooooooooooooooooo\n") ;  
+    }
+    
+    
     if (newDataFlag == 1) {
         timerNoPulse = 0;
     } else {

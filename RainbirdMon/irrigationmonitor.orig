@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <math.h>
 #include <time.h>
 #include <json-c/json.h>
@@ -9,15 +8,10 @@
 #include "MQTTClient.h"
 #include "../include/water.h"
 
-MQTTClient client;
-MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-MQTTClient_message pubmsg = MQTTClient_message_initializer;
-MQTTClient_deliveryToken token;
 int verbose = FALSE;
 
 float TotalDailyGallons = 0;
 float TotalGPM = 0;
-
 
 int find_active_station(Controller* controller) {
     for (int i = 0; i < MAX_ZONES; i++) {
@@ -42,7 +36,6 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 */
 
 #include "../mylib/msgarrvd.c"
-#include "../mylib/publogmsg.c"
 
 void connlost(void *context, char *cause)
 {
@@ -61,31 +54,29 @@ int main(int argc, char* argv[])
    time(&t);
    int SecondsFromMidnight = 0 ;
    int PriorSecondsFromMidnight =0;
-// Add a static variable to track the previous timestamp
-   static struct timespec previous_time = {0, 0}; // Initialized to 0 at the start
-   struct timespec current_time;
-
    float irrigationPressure = 0;
    float temperatureF;
-
-   float intervalFlow = 0;
+   float calibrationFactor = .5;
+   float flowRate = 0.0;
    float dailyGallons = 0;
+   float flowRateGPM = 0;
    float avgflowRateGPM = 0;
-    
+   float avgflowRate = 0;
+   static int   flowIndex = 0;
+   static float flowRateValueArray[30] = {0};
+   static int   validSampleCount = 0;
+   static int   timerNoPulse = 0;
+   int pulseCount = 0;
+   int millsElapsed = 0;
+   int millsTotal = 0;
+   int dailyPulseCount = 0;
+   int newPulseData = 0;
    int pumpState = 0;
    int lastpumpState = 0;
    int startGallons = 0;
    int stopGallons = 0;
    int tankstartGallons = 0;
    int tankstopGallons = 0;
-   // Define the bit-packed structure
-   struct FlowData {
-     uint32_t pulses : 12;       // 12 bits for pulse count
-     uint32_t milliseconds : 19; // 19 bits for milliseconds
-     uint32_t newData : 1;       // 1 bit for new data flag
-   } ;
-
-   struct FlowData flowData;
 
    #define RAINBIRD_COMMAND_DELAY 20
    #define RAINBIRD_REQUEST_DELAY 20
@@ -93,17 +84,18 @@ int main(int argc, char* argv[])
    int rainbirdRecvRequest = FALSE;
    int rainbirdDelay = RAINBIRD_COMMAND_DELAY ; //wait 10 seconds to query results
    int rainbirdReqDelay = RAINBIRD_REQUEST_DELAY  ; //wait 20 seconds to query results
-
+   
+   
+   MQTTClient client;
+   MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+   MQTTClient_message pubmsg = MQTTClient_message_initializer;
+   MQTTClient_deliveryToken token;
    int rc;
    int opt;
    const char *mqtt_ip;
    int mqtt_port;
-   int training_mode = FALSE;
-   int limit_mode = FALSE;
-   float limit_gallons = 0;
-   float start_limit_gallons = 0;
-   char training_filename[256];
-   while ((opt = getopt(argc, argv, "vPDL:T:")) != -1) {
+
+   while ((opt = getopt(argc, argv, "vPD")) != -1) {
       switch (opt) {
          case 'v':
                verbose = TRUE;
@@ -116,33 +108,8 @@ int main(int argc, char* argv[])
                mqtt_ip = DEV_MQTT_IP;
                mqtt_port = DEV_MQTT_PORT;
                break;
-         case 'L':
-               limit_mode = TRUE;
-               if (optarg != NULL && strlen(optarg) > 0) {
-                   limit_gallons = atof(optarg);
-                   // Use limit_mode and limit_gallons as needed
-               } else {
-                   fprintf(stderr, "Warning: Number of gallons not provided. Using default 200 for the -L option.\n");
-                   fprintf(stderr, "Usage: %s [-v] [-P | -D] [-L #ofGallons] [-T filename]\n", argv[0]);
-                   limit_gallons = 200 ;
-               }
-               break;
-         case 'T':
-            {
-                training_mode = TRUE;
-                
-                if (optarg != NULL && strlen(optarg) > 0) {
-                    snprintf(training_filename, 256, "%s%s", trainingdata, optarg);
-                    // Use training_mode and training_filename as needed
-                } else {
-                    fprintf(stderr, "Error: No filename provided for the -T option.\n");
-                    fprintf(stderr, "Usage: %s [-v] [-P | -D] [-L #ofGallons] [-T filename]\n", argv[0]);
-                    return 1;
-                }
-            }
-            break;
          default:
-               fprintf(stderr, "Usage: %s [-v] [-P | -D] [-L #ofGallons] [-T filename]\n", argv[0]);
+               fprintf(stderr, "Usage: %s [-v] [-P | -D]\n", argv[0]);
                return 1;
       }
    }
@@ -191,9 +158,9 @@ int main(int argc, char* argv[])
       rc = EXIT_FAILURE;
       exit(EXIT_FAILURE);
    }
-   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLSENS_CLIENTID, WELLSENS_TOPICID, QOS);
-   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", WELLSENS_CLIENTID, WELLSENS_TOPICID);
-   MQTTClient_subscribe(client, WELLSENS_TOPICID, QOS);
+   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", IRRIGATIONSENS_CLIENTID, IRRIGATIONSENS_TOPICID, QOS);
+   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", IRRIGATIONSENS_CLIENTID, IRRIGATIONSENS_TOPICID);
+   MQTTClient_subscribe(client, IRRIGATIONSENS_TOPICID, QOS);
    
    printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLMON_TOPICID, WELLMON_CLIENTID, QOS);
    log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", WELLMON_TOPICID, WELLMON_CLIENTID);
@@ -209,7 +176,8 @@ int main(int argc, char* argv[])
 
    log_message("IrrigationMonitor Entering Main Loop\n") ;
    
-   while(1) {
+   while(1)
+   {
       time(&t);
       localtime_r(&t, &timenow);
       
@@ -233,42 +201,97 @@ int main(int argc, char* argv[])
       //printf("seconds since midnight: %d\n", SecondsFromMidnight);
       PriorSecondsFromMidnight = SecondsFromMidnight ;
       
-      /*
-      * Call the flow monitor function
-      */
-      memcpy(&flowData, &wellSens_.well.flowData2, sizeof(struct FlowData));
-      flowmon(flowData.newData, flowData.milliseconds, flowData.pulses, &avgflowRateGPM, &intervalFlow, .935) ;
-      //flowmon(irrigationSens_.irrigation.new_data_flag, irrigationSens_.irrigation.milliseconds, irrigationSens_.irrigation.pulse_count, &avgflowRateGPM, &intervalFlow, .935) ;
-      dailyGallons += intervalFlow ;
-      //irrigationPressure = ((irrigationSens_.irrigation.adc_sensor * 0.1329)-4.7351);
-      irrigationPressure  = ((wellSens_.well.adc_x7 - .5) * 25);
+// Manage the Reset When Pulses Have Stopped for 1 minute
+   if (timerNoPulse == 0) {
+      timerNoPulse++;
+      if (timerNoPulse > 60) {
+         timerNoPulse = 0;
+         validSampleCount = 0;
+         for( i=0; i<=29; ++i){
+            flowRateValueArray[i] = 0.0;
+         }
+      }
+   }
+ 
+// Define the threshold for pulse count
+#define PULSE_COUNT_THRESHOLD 50
+
+      newPulseData = irrigationSens_.irrigation.new_data_flag ;
+      if ( newPulseData == 1){
+         
+         millsElapsed = irrigationSens_.irrigation.milliseconds ;
+         pulseCount = irrigationSens_.irrigation.pulse_count ;
+         
+         if (pulseCount <= PULSE_COUNT_THRESHOLD && millsElapsed < 5000 && millsElapsed != 0) {   //ignore the really long intervals
+            timerNoPulse = 0;
+            millsElapsed = irrigationSens_.irrigation.milliseconds ;
+
+            flowRate = ((pulseCount / (millsElapsed/1000)) / .5) / calibrationFactor;
+            flowRate = ((flowRate * .00026417)/(millsElapsed/1000)) * 60;  //GPM
+            flowRateGPM = flowRate * 30;
+            dailyGallons = dailyGallons + flowRate ;
+            
+            if (flowRateGPM > 2.0) {
+               flowRateValueArray[flowIndex++] = flowRateGPM;
+               if (flowIndex == 30) {
+                  validSampleCount = 1;
+               }  
+               flowIndex = flowIndex % 30;
+            }
+            avgflowRate = 0 ;
+            for( i=0; i<=29; ++i){
+               avgflowRate += flowRateValueArray[i];
+               //printf("flowRateValueArray[%d]: %f avgflowRate: %f\n", i, flowRateValueArray[i], avgflowRate );
+            }
+            if (validSampleCount == 1) {
+               avgflowRateGPM = avgflowRate / 30;
+            }
+            
+            
+             //printf("Pulse Count: %d   Daily Pulse Count: %d\n", pulseCount, dailyPulseCount);
+             //printf("Milliseconds Elapsed: %d   Milliseconds Total:  %d\n", millsElapsed, millsTotal);
+             //printf("Flow Rate: %f  Flow Rate GPM:  %f   Daily Gallons:  %f\n", flowRate, flowRateGPM,  dailyGallons);
+             //printf("Average Flow Rate: %f\n", avgflowRate);
+             
+         }    
+      } else {
+         pulseCount = 0;
+         millsElapsed = 0 ;
+      }
       
-      temperatureF = wellSens_.well.temp2 ;
-        
+      
+      irrigationPressure = (irrigationSens_.irrigation.adc_sensor * .1336) - 10.523 ;
+      
+      //temperatureF = *((float *)&flow_data_payload[17]);
+      
+      memcpy(&temperatureF, &irrigationSens_.irrigation.temp_w1, sizeof(float));
+      
+      
       /*
        * If irrigation pump is running try and determine what Controller & Zone is active
        */
       if (rainbirdRecvRequest == TRUE) {
          if (rainbirdDelay == 0) {
-            // Check Front Controller first
             int active_station = find_active_station(&Front_Controller);
             if (active_station != -1) {
                printf("Active station for Front_Controller is: %d\n", active_station);
-               irrigationMon_.irrigation.controller = 1;
-               irrigationMon_.irrigation.zone = active_station;
+               irrigationMon_.irrigation.FrontControllerActive = 1;
+               irrigationMon_.irrigation.FrontActiveZone       = active_station;
             } else {
-               // Only check Back Controller if Front had no active stations
-               active_station = find_active_station(&Back_Controller);
-               if (active_station != -1) {
-                  printf("Active station for Back_Controller is: %d\n", active_station);
-                  irrigationMon_.irrigation.controller = 2;
-                  irrigationMon_.irrigation.zone = active_station;
-               } else {
-                  // No active stations found in either controller
-                  printf("No active stations found in any controller\n");
-                  irrigationMon_.irrigation.controller = 0;
-                  irrigationMon_.irrigation.zone = 0;
-               }
+               printf("No active station for Front_Controller\n");
+               irrigationMon_.irrigation.FrontControllerActive = 0;
+               irrigationMon_.irrigation.FrontActiveZone       = 0;
+            }
+
+            active_station = find_active_station(&Back_Controller);
+            if (active_station != -1) {
+               printf("Active station for Back_Controller is: %d\n", active_station);
+               irrigationMon_.irrigation.BackControllerActive = 1;
+               irrigationMon_.irrigation.BackActiveZone       = active_station;
+            } else {
+               printf("No active station for Back_Controller\n");
+               irrigationMon_.irrigation.BackControllerActive = 0; 
+               irrigationMon_.irrigation.BackActiveZone       = 0;
             }
 
             rainbirdRecvRequest = FALSE;
@@ -280,27 +303,23 @@ int main(int argc, char* argv[])
       /*
        * Load Up the Data
        */
-      irrigationMon_.irrigation.intervalFlow = intervalFlow;
-      irrigationMon_.irrigation.amperage = wellMon_.well.amp_pump_4;
-      irrigationMon_.irrigation.gallonsMinute = avgflowRateGPM;
-      irrigationMon_.irrigation.gallonsDay =   dailyGallons;
-      irrigationMon_.irrigation.pressurePSI  =  irrigationPressure;
-      irrigationMon_.irrigation.temperatureF  =  temperatureF;
-      irrigationMon_.irrigation.cycleCount =  wellSens_.well.cycle_count ;
-      irrigationMon_.irrigation.fwVersion = 0;
       
-      /* Prevent Reading Flow Data Twice */
-      
-      //wellSens_.well.flowData2 = 0 ;
+      irrigationMon_.irrigation.FlowPerMin = avgflowRateGPM;
+      irrigationMon_.irrigation.TotalFlow =   dailyGallons;
+      irrigationMon_.irrigation.Pressure  =  irrigationPressure;
+      irrigationMon_.irrigation.PumpTemp  =  temperatureF;
+      irrigationMon_.irrigation.cycle_count =  irrigationSens_.irrigation.cycle_count ;
+      irrigationMon_.irrigation.fw_version = 0;
+
       
       if (verbose) {
          for (i=0; i<=IRRIGATIONMON_LEN-1; i++) {
-            printf("%.3f ", irrigationMon_.data_payload[i]);
+            printf("%.3f ", irrigationSens_.data_payload[i]);
          }
          printf("%s", ctime(&t));
       }
       
-      pubmsg.payload = irrigationMon_.data_payload;
+      pubmsg.payload = irrigationSens_.data_payload;
       pubmsg.payloadlen = IRRIGATIONMON_LEN * 4;
       pubmsg.qos = QOS;
       pubmsg.retained = 0;
@@ -312,7 +331,7 @@ int main(int argc, char* argv[])
          rc = EXIT_FAILURE;
       }
       json_object *root = json_object_new_object();
-      for (i=0; i<=IRRIGATIONMON_LEN-1; i++) {
+      for (i=0; i<=WELLMON_LEN-1; i++) {
          json_object_object_add(root, irrigationmon_ClientData_var_name [i], json_object_new_double(irrigationMon_.data_payload[i]));
       }
 
@@ -340,10 +359,9 @@ int main(int argc, char* argv[])
       else {
          pumpState = OFF;
       }
-
+      
       if ((pumpState == ON) && (lastpumpState == OFF)){
          startGallons = dailyGallons;
-         start_limit_gallons = dailyGallons;
          time(&start_t);
          lastpumpState = ON;
          /*
@@ -356,13 +374,13 @@ int main(int argc, char* argv[])
          stopGallons = dailyGallons - startGallons ;
          time(&end_t);
          diff_t = difftime(end_t, start_t);
-         if (irrigationMon_.irrigation.controller == 1) {
+         if (irrigationMon_.irrigation.FrontControllerActive == 1) {
             fprintf(fptr, "Controller: Front ");
-            fprintf(fptr, "Zone: %d   ", (int)irrigationMon_.irrigation.zone);
+            fprintf(fptr, "Zone: %d   ", (int)irrigationMon_.irrigation.FrontActiveZone);
          }
-         else if (irrigationMon_.irrigation.controller == 2) {
+         else if (irrigationMon_.irrigation.BackControllerActive == 1) {
             fprintf(fptr, "Controller: Back  ");
-            fprintf(fptr, "Zone: %d   ", (int)irrigationMon_.irrigation.zone);
+            fprintf(fptr, "Zone: %d   ", (int)irrigationMon_.irrigation.BackActiveZone);
          }
          else {
             fprintf(fptr, "Controller: ??  ");
@@ -374,56 +392,10 @@ int main(int argc, char* argv[])
          fclose(fptr);
          lastpumpState = OFF ;
          sleep(1);
-         irrigationMon_.irrigation.controller  =    0;  
-         irrigationMon_.irrigation.zone        =    0;  
-      }
-      else if (( pumpState == ON) && (limit_mode == TRUE)) {
-         if ((dailyGallons - start_limit_gallons) > limit_gallons) {
-            pubmsg.payload = rainbird_command4;
-            pubmsg.payloadlen = strlen(rainbird_command4);
-            pubmsg.qos = 0;
-            pubmsg.retained = 0;
-            deliveredtoken = 0;
-            if ((rc = MQTTClient_publishMessage(client, RAINBIRDCOMMAND_TOPICID, &pubmsg, &token)) != MQTTCLIENT_SUCCESS)
-            {
-               printf("Failed to publish rainbird command message for controller STOP, return code %d\n", rc);
-               log_message("IrrigationMonitor Error == Failed to Publish Rainbird Command Message for controller 1. Return Code: %d\n", rc);
-               rc = EXIT_FAILURE;
-            }
-            sleep(3) ;
-         }
-      }
-      if (pumpState == ON) {
-             clock_gettime(CLOCK_MONOTONIC, &current_time);
-
-         if (previous_time.tv_sec != 0 || previous_time.tv_nsec != 0) {
-            // Calculate the time slice in seconds since the last execution
-            irrigationMon_.irrigation.secondsOn = (float)(current_time.tv_sec - previous_time.tv_sec) +
-                                          (float)(current_time.tv_nsec - previous_time.tv_nsec) / 1.0e9f;
-         } else {
-            // This is the first execution; initialize secondsOn to 0
-            irrigationMon_.irrigation.secondsOn = 0.0f;
-         }
-
-         // Update the previous timestamp to the current time
-         previous_time = current_time;
-         // Populate the log structure
-         log_.log.Controller = (int)irrigationMon_.irrigation.controller;
-         log_.log.Zone = (int)irrigationMon_.irrigation.zone;
-         log_.log.pressurePSI = irrigationMon_.irrigation.pressurePSI;
-         log_.log.temperatureF = irrigationMon_.irrigation.temperatureF;
-         log_.log.intervalFlow = irrigationMon_.irrigation.intervalFlow;
-         log_.log.amperage = irrigationMon_.irrigation.amperage;
-         log_.log.secondsOn = irrigationMon_.irrigation.secondsOn ;
-         log_.log.gallonsTank = 0;
-         
-         publishLogMessage(client, &log_, "irrigation");
-      } else {
-      // If the pump is not running, set secondsOn to 0
-         irrigationMon_.irrigation.secondsOn = 0.0f;
-
-      // Optionally update previous_time to avoid long intervals when the pump starts again
-         clock_gettime(CLOCK_MONOTONIC, &previous_time);
+         irrigationMon_.irrigation.FrontControllerActive  =    0;  
+         irrigationMon_.irrigation.FrontActiveZone        =    0;  
+         irrigationMon_.irrigation.BackControllerActive   =    0;  
+         irrigationMon_.irrigation.BackActiveZone         =    0;  
       }
       if ((rainbirdRequest == TRUE) && (rainbirdReqDelay == 0)){
          pubmsg.payload = rainbird_command1;
@@ -454,16 +426,7 @@ int main(int argc, char* argv[])
       } else if (rainbirdRequest == TRUE) {
          rainbirdReqDelay--; 
       }
-      if (training_mode && pumpState == ON) {
-         FILE *file = fopen(training_filename, "a");
-         if (file != NULL) {
-            time_t current_time = time(NULL);
-            fprintf(file, "%ld, %f, %f, %f\n", current_time, wellMon_.well.amp_pump_4, avgflowRateGPM, irrigationPressure);
-            fclose(file);
-         } else {
-            fprintf(stderr, "Error opening file: %s\n", training_filename);
-         }
-      }
+      
       sleep(1) ;
    }
    

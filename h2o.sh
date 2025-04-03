@@ -35,6 +35,9 @@ sleep 3
 nohup ${BIN_DIR}/well3monitor -P >> "${LOG_DIR}/well3monitor.log" 2>&1 &
 sleep 3
 
+nohup ${BIN_DIR}/rainbirdmon -P >> "${LOG_DIR}/rainbirdmonitor.log" 2>&1 &
+sleep 3
+
 log_message "Starting Irrigation Monitor App"
 nohup ${BIN_DIR}/irrigationmonitor -P >> "${LOG_DIR}/irrigationmonitor.log" 2>&1 &
 sleep 3

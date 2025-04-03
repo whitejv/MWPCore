@@ -3,6 +3,7 @@ project (MilanoWaterProject)
 add_subdirectory (./mylib)
 add_subdirectory (./IrrigationMonitor)
 add_subdirectory (./TankMonitor)
+add_subdirectory (./RainbirdMon)
 add_subdirectory (./Monitor)
 add_subdirectory (./WellMonitor)
 add_subdirectory (./HouseMonitor)
@@ -13,6 +14,7 @@ add_subdirectory (./BlynkAlert)
 add_custom_target(clean-all
    COMMAND ${CMAKE_BUILD_TOOL} clean
    COMMAND rm -f bin/wellmonitor
+   COMMAND rm -f bin/rainbirdmon
    COMMAND rm -f bin/irrigationmonitor
    COMMAND rm -f bin/tankmonitor
    COMMAND rm -f bin/housemonitor

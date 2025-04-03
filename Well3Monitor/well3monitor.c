@@ -28,7 +28,7 @@ void PumpStats(void) ;
 void MyMQTTSetup(char *mqtt_address) ;
 void MyMQTTPublish(void) ;
 float moving_average(float new_sample, float samples[], uint8_t *sample_index, uint8_t window_size) ;
-void publishLogMessage(union LOG_ *log_data, const char *message_id);
+
 
 MQTTClient client;
 MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -47,7 +47,7 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 */
 
 #include "../mylib/msgarrvd.c"
-
+#include "../mylib/publogmsg.c"
 void connlost(void *context, char *cause)
 {
    printf("\nConnection lost\n");
@@ -73,6 +73,14 @@ int main(int argc, char* argv[])
    float temperatureF;
    float intervalFlow = 0; 
    float TankGallons = 0;
+   // Define the bit-packed structure
+   struct FlowData {
+     uint32_t pulses : 12;       // 12 bits for pulse count
+     uint32_t milliseconds : 19; // 19 bits for milliseconds
+     uint32_t newData : 1;       // 1 bit for new data flag
+   } ;
+
+   struct FlowData flowData;
 
 
    int opt;
@@ -146,7 +154,9 @@ int main(int argc, char* argv[])
          fclose(fptr);
       }
 
-      flowmon(well3Sens_.well3.new_data_flag, well3Sens_.well3.milliseconds, well3Sens_.well3.pulse_count, &avgflowRateGPM, &intervalFlow, .98) ;
+      // Read the flow data from the flow sensor
+      memcpy(&flowData, &wellSens_.well.flowData1, sizeof(struct FlowData));
+      flowmon(flowData.newData, flowData.milliseconds, flowData.pulses, &avgflowRateGPM, &intervalFlow, .98) ;
       dailyGallons = dailyGallons + intervalFlow;
       well3Mon_.well3.intervalFlow = intervalFlow;
       well3Mon_.well3.amperage = wellMon_.well.amp_pump_3;
@@ -154,15 +164,19 @@ int main(int argc, char* argv[])
       well3Mon_.well3.gallonsDay = dailyGallons;
       well3Mon_.well3.controller = 3;
       well3Mon_.well3.zone = 1;
-      
-      memcpy(&temperatureF, &well3Sens_.well3.temp_w1 , sizeof(float));
 
+      /* Prevent Reading Flow Data Twice */
+      
+      wellSens_.well.flowData1 = 0 ;
+
+      memcpy(&temperatureF, &well3Sens_.well3.temp_w1 , sizeof(float));
+      temperatureF = wellSens_.well.temp4; 
       well3Mon_.well3.temperatureF =  temperatureF;
-      well3Mon_.well3.cycleCount =    well3Sens_.well3.cycle_count;
+      well3Mon_.well3.cycleCount =    wellSens_.well.cycle_count;
       //well3Mon_.well3.well3Pressure = well3Sens_.well3.adc_sensor * 0.0048828125 * 20;
       //using moving average for now
-
-      PresSensorValue = ((well3Sens_.well3.adc_sensor * 0.107)-12.164);
+      //voltage range is .5-4.5 so 4 volts over 100 psi so 0.04 volts per psi
+      PresSensorValue = ((wellSens_.well.adc_x8 - .5) * 25);
             
       well3Mon_.well3.pressurePSI = moving_average(PresSensorValue, samples, &sample_index, window_size);
       
@@ -199,7 +213,7 @@ if (wellMon_.well.well_pump_3_on == 1) {
     log_.log.secondsOn = well3Mon_.well3.secondsOn;
     log_.log.gallonsTank = 0;
 
-    publishLogMessage(&log_, "well3");
+    publishLogMessage(client, &log_, "well3");
 } else {
     // If the pump is not running, set secondsOn to 0
     well3Mon_.well3.secondsOn = 0.0f;
@@ -255,9 +269,9 @@ void MyMQTTSetup(char* mqtt_address){
       exit(EXIT_FAILURE);
    }
    
-   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELL3SENS_TOPICID, WELL3SENS_CLIENTID, QOS);
-   log_message("well3Monitor: Subscribing to topic: %s for client: %s\n", WELL3SENS_TOPICID, WELL3SENS_CLIENTID);
-   MQTTClient_subscribe(client, WELL3SENS_TOPICID, QOS);
+   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLSENS_TOPICID, WELLSENS_CLIENTID, QOS);
+   log_message("well3Monitor: Subscribing to topic: %s for client: %s\n", WELLSENS_TOPICID, WELLSENS_CLIENTID);
+   MQTTClient_subscribe(client, WELLSENS_TOPICID, QOS);
 
    printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLMON_TOPICID, WELLMON_CLIENTID,  QOS);
    log_message("well3Monitor: Subscribing to topic: %s for client: %s\n", WELLMON_TOPICID, WELLMON_CLIENTID );
@@ -307,44 +321,6 @@ MQTTClient_waitForCompletion(client, token, TIMEOUT);
 json_object_put(root); // Free the memory allocated to the JSON object
 
 }
-void publishLogMessage(union LOG_ *log_data, const char *message_id) {
-   json_object *root = json_object_new_object();
-   char topic[100];
-   // Create JSON object with proper types
-   // First two fields are integers
-   json_object_object_add(root, log_ClientData_var_name[0], 
-      json_object_new_int(log_data->log.Controller));
-   json_object_object_add(root, log_ClientData_var_name[1], 
-      json_object_new_int(log_data->log.Zone));  
-   json_object_object_add(root, log_ClientData_var_name[2], 
-      json_object_new_double(log_data->log.pressurePSI));
-   json_object_object_add(root, log_ClientData_var_name[3], 
-      json_object_new_double(log_data->log.temperatureF));
-   json_object_object_add(root, log_ClientData_var_name[4], 
-      json_object_new_double(log_data->log.intervalFlow));
-   json_object_object_add(root, log_ClientData_var_name[5], 
-      json_object_new_double(log_data->log.amperage));
-   json_object_object_add(root, log_ClientData_var_name[6], 
-      json_object_new_double(log_data->log.secondsOn));
-   json_object_object_add(root, log_ClientData_var_name[7], 
-      json_object_new_double(log_data->log.gallonsTank));
-
-   const char *json_string = json_object_to_json_string(root);
-   
-   // Create topic string with message_id
-   snprintf(topic, sizeof(topic), "%s%s/", LOG_JSONID, message_id);
-   
-   // Prepare and publish MQTT message
-   pubmsg.payload = (void *)json_string;
-   pubmsg.payloadlen = strlen(json_string);
-   pubmsg.qos = QOS;
-   pubmsg.retained = 0;
-   
-   MQTTClient_publishMessage(client, topic, &pubmsg, &token);
-   MQTTClient_waitForCompletion(client, token, TIMEOUT);
-   
-   json_object_put(root);
-} 
 void PumpStats() {
 
 FILE *fptr;

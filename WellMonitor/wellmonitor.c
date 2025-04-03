@@ -41,10 +41,10 @@ int main(int argc, char *argv[])
  
    int SepticAlert = 0;
 
-   int raw_voltage1_adc = 0;
-   int raw_voltage2_adc = 0;
-   int raw_voltage3_adc = 0;
-   int raw_voltage4_adc = 0;
+   float raw_voltage1_adc = 0;
+   float raw_voltage2_adc = 0;
+   float raw_voltage3_adc = 0;
+   float raw_voltage4_adc = 0;
    int pump1_on = 0;
    int pump2_on = 0;
    int pump3_on = 0;
@@ -54,9 +54,8 @@ int main(int argc, char *argv[])
 
    int PressSwitState;
 
-   int raw_temp = 0;
-   float AmbientTempF = 0;
-   float AmbientTempC = 0;
+   float systemTempF = 0;
+ 
 
    
 
@@ -148,30 +147,30 @@ int main(int argc, char *argv[])
       time(&t);
 
      
-      raw_voltage1_adc = wellSens_.well.adc_x1;
-      if (raw_voltage1_adc > 1000) {
+      raw_voltage1_adc = wellSens_.well.adc_x4;
+      if (raw_voltage1_adc > 1.) {
          pump1_on = 1 ;
       }
       else {
          pump1_on = 0;
       }
 
-      raw_voltage2_adc = wellSens_.well.adc_x2;
-      if (raw_voltage2_adc > 1000) {
+      raw_voltage2_adc = wellSens_.well.adc_x3;
+      if (raw_voltage2_adc > 1.) {
          pump2_on = 1 ;
       }
       else {
          pump2_on = 0;
       }     
-      raw_voltage3_adc = wellSens_.well.adc_x3;
-      if (raw_voltage3_adc > 1000) {
+      raw_voltage3_adc = wellSens_.well.adc_x2;
+      if (raw_voltage3_adc > 1.) {
          pump3_on = 1 ;
       }
       else {
          pump3_on = 0;
       }
-      raw_voltage4_adc = wellSens_.well.adc_x4;
-      if (raw_voltage4_adc > 750) {
+      raw_voltage4_adc = wellSens_.well.adc_x1;
+      if (raw_voltage4_adc > 1.) {
          pump4_on = 1 ;
       }
       else {
@@ -190,9 +189,7 @@ int main(int argc, char *argv[])
        * Convert Raw Temp Sensor to degrees farenhiet
        */
 
-      raw_temp = wellSens_.well.temp;
-      //AmbientTempC = raw_temp ;
-      AmbientTempF = raw_temp;
+      systemTempF = wellSens_.well.tempx;
       //printf("Ambient Temp:%f  \n", AmbientTempF);
 
       /*
@@ -209,15 +206,15 @@ int main(int argc, char *argv[])
       wellMon_.well.well_pump_3_on = pump3_on;
       wellMon_.well.irrigation_pump_on = pump4_on;
       wellMon_.well.house_water_pressure = 0.0;
-      wellMon_.well.system_temp = AmbientTempF;
+      wellMon_.well.system_temp = systemTempF;
       wellMon_.well.House_tank_pressure_switch_on = PressSwitState;
       wellMon_.well.septic_alert_on = SepticAlert;
       wellMon_.well.cycle_count = wellSens_.well.cycle_count;
       wellMon_.well.fw_version = wellSens_.well.fw_version;
-      wellMon_.well.amp_pump_1 = wellSens_.well.adc_x1;
-      wellMon_.well.amp_pump_2 = wellSens_.well.adc_x2;
-      wellMon_.well.amp_pump_3 = wellSens_.well.adc_x3;
-      wellMon_.well.amp_pump_4 = wellSens_.well.adc_x4;
+      wellMon_.well.amp_pump_1 = wellSens_.well.adc_x4;
+      wellMon_.well.amp_pump_2 = wellSens_.well.adc_x3;
+      wellMon_.well.amp_pump_3 = wellSens_.well.adc_x2;
+      wellMon_.well.amp_pump_4 = wellSens_.well.adc_x1;
       wellMon_.well.amp_5 = wellSens_.well.adc_x5;
       wellMon_.well.amp_6 = wellSens_.well.adc_x6;
       wellMon_.well.amp_7 = wellSens_.well.adc_x7;

@@ -9,7 +9,6 @@
 #include "MQTTClient.h"
 #include "../include/water.h"
 
-void publishLogMessage(union LOG_ *log_data, const char *message_id);
 MQTTClient client;
 MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 MQTTClient_message pubmsg = MQTTClient_message_initializer;
@@ -19,15 +18,6 @@ int verbose = FALSE;
 float TotalDailyGallons = 0;
 float TotalGPM = 0;
 
-
-int find_active_station(Controller* controller) {
-    for (int i = 0; i < MAX_ZONES; i++) {
-        if (controller->states[i].status == 1) {
-            return controller->states[i].station;
-        }
-    }
-    return -1;  // return -1 if no active station is found
-}
 
 MQTTClient_deliveryToken deliveredtoken;
 
@@ -43,6 +33,7 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 */
 
 #include "../mylib/msgarrvd.c"
+#include "../mylib/publogmsg.c"
 
 void connlost(void *context, char *cause)
 {
@@ -78,13 +69,14 @@ int main(int argc, char* argv[])
    int stopGallons = 0;
    int tankstartGallons = 0;
    int tankstopGallons = 0;
+   // Define the bit-packed structure
+   struct FlowData {
+     uint32_t pulses : 12;       // 12 bits for pulse count
+     uint32_t milliseconds : 19; // 19 bits for milliseconds
+     uint32_t newData : 1;       // 1 bit for new data flag
+   } ;
 
-   #define RAINBIRD_COMMAND_DELAY 20
-   #define RAINBIRD_REQUEST_DELAY 20
-   int rainbirdRequest = FALSE;
-   int rainbirdRecvRequest = FALSE;
-   int rainbirdDelay = RAINBIRD_COMMAND_DELAY ; //wait 10 seconds to query results
-   int rainbirdReqDelay = RAINBIRD_REQUEST_DELAY  ; //wait 20 seconds to query results
+   struct FlowData flowData;
 
    int rc;
    int opt;
@@ -183,17 +175,17 @@ int main(int argc, char* argv[])
       rc = EXIT_FAILURE;
       exit(EXIT_FAILURE);
    }
-   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", IRRIGATIONSENS_CLIENTID, IRRIGATIONSENS_TOPICID, QOS);
-   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", IRRIGATIONSENS_CLIENTID, IRRIGATIONSENS_TOPICID);
-   MQTTClient_subscribe(client, IRRIGATIONSENS_TOPICID, QOS);
+   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLSENS_CLIENTID, WELLSENS_TOPICID, QOS);
+   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", WELLSENS_CLIENTID, WELLSENS_TOPICID);
+   MQTTClient_subscribe(client, WELLSENS_TOPICID, QOS);
    
    printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLMON_TOPICID, WELLMON_CLIENTID, QOS);
    log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", WELLMON_TOPICID, WELLMON_CLIENTID);
    MQTTClient_subscribe(client, WELLMON_TOPICID, QOS);
 
-   printf("Subscribing to topic: %s for client: %s using QoS: 0\n", RAINBIRDRESPONSE_TOPICID, RAINBIRDRESPONSE_CLIENTID );
-   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n",RAINBIRDRESPONSE_TOPICID, RAINBIRDRESPONSE_CLIENTID);
-   MQTTClient_subscribe(client, RAINBIRDRESPONSE_TOPICID, 0);
+   printf("Subscribing to topic: %s for client: %s using QoS: 0\n", IRRIGATIONRESPONSE_TOPICID, IRRIGATIONRESPONSE_CLIENTID );
+   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n",IRRIGATIONRESPONSE_TOPICID, IRRIGATIONRESPONSE_CLIENTID);
+   MQTTClient_subscribe(client, IRRIGATIONRESPONSE_TOPICID, 0);
    
    /*
     * Main Loop
@@ -228,44 +220,21 @@ int main(int argc, char* argv[])
       /*
       * Call the flow monitor function
       */
-      flowmon(irrigationSens_.irrigation.new_data_flag, irrigationSens_.irrigation.milliseconds, irrigationSens_.irrigation.pulse_count, &avgflowRateGPM, &intervalFlow, .935) ;
+      memcpy(&flowData, &wellSens_.well.flowData2, sizeof(struct FlowData));
+      flowmon(flowData.newData, flowData.milliseconds, flowData.pulses, &avgflowRateGPM, &intervalFlow, 1.0) ;
+      //flowmon(irrigationSens_.irrigation.new_data_flag, irrigationSens_.irrigation.milliseconds, irrigationSens_.irrigation.pulse_count, &avgflowRateGPM, &intervalFlow, .935) ;
       dailyGallons += intervalFlow ;
-      irrigationPressure = ((irrigationSens_.irrigation.adc_sensor * 0.1329)-4.7351);
+      //irrigationPressure = ((irrigationSens_.irrigation.adc_sensor * 0.1329)-4.7351);
+      irrigationPressure  = ((wellSens_.well.adc_x7 - .5) * 25);
       
-      memcpy(&temperatureF, &irrigationSens_.irrigation.temp_w1, sizeof(float));
+      temperatureF = wellSens_.well.temp2 ;
         
       /*
-       * If irrigation pump is running try and determine what Controller & Zone is active
+       * Rainbird Monitor is source of Controller & Zone info
        */
-      if (rainbirdRecvRequest == TRUE) {
-         if (rainbirdDelay == 0) {
-            // Check Front Controller first
-            int active_station = find_active_station(&Front_Controller);
-            if (active_station != -1) {
-               printf("Active station for Front_Controller is: %d\n", active_station);
-               irrigationMon_.irrigation.controller = 1;
-               irrigationMon_.irrigation.zone = active_station;
-            } else {
-               // Only check Back Controller if Front had no active stations
-               active_station = find_active_station(&Back_Controller);
-               if (active_station != -1) {
-                  printf("Active station for Back_Controller is: %d\n", active_station);
-                  irrigationMon_.irrigation.controller = 2;
-                  irrigationMon_.irrigation.zone = active_station;
-               } else {
-                  // No active stations found in either controller
-                  printf("No active stations found in any controller\n");
-                  irrigationMon_.irrigation.controller = 0;
-                  irrigationMon_.irrigation.zone = 0;
-               }
-            }
 
-            rainbirdRecvRequest = FALSE;
-            rainbirdDelay = RAINBIRD_COMMAND_DELAY;
-         } else {
-            rainbirdDelay--;
-         }
-      }
+       irrigationMon_.irrigation.controller = irrigationResponse_.irrigation.command_response_w1 ;
+       irrigationMon_.irrigation.zone = irrigationResponse_.irrigation.command_response_w2;
       /*
        * Load Up the Data
        */
@@ -275,9 +244,12 @@ int main(int argc, char* argv[])
       irrigationMon_.irrigation.gallonsDay =   dailyGallons;
       irrigationMon_.irrigation.pressurePSI  =  irrigationPressure;
       irrigationMon_.irrigation.temperatureF  =  temperatureF;
-      irrigationMon_.irrigation.cycleCount =  irrigationSens_.irrigation.cycle_count ;
+      irrigationMon_.irrigation.cycleCount =  wellSens_.well.cycle_count ;
       irrigationMon_.irrigation.fwVersion = 0;
-
+      
+      /* Prevent Reading Flow Data Twice */
+      
+      wellSens_.well.flowData2 = 0 ;
       
       if (verbose) {
          for (i=0; i<=IRRIGATIONMON_LEN-1; i++) {
@@ -332,10 +304,7 @@ int main(int argc, char* argv[])
          start_limit_gallons = dailyGallons;
          time(&start_t);
          lastpumpState = ON;
-         /*
-          * Command rainbird to send data
-          */
-         rainbirdRequest = TRUE;
+         
       }
       else if ((pumpState == OFF) && (lastpumpState == ON)){
          fptr = fopen(flowdata, "a");
@@ -403,7 +372,7 @@ int main(int argc, char* argv[])
          log_.log.secondsOn = irrigationMon_.irrigation.secondsOn ;
          log_.log.gallonsTank = 0;
          
-         publishLogMessage(&log_, "irrigation");
+         publishLogMessage(client, &log_, "irrigation");
       } else {
       // If the pump is not running, set secondsOn to 0
          irrigationMon_.irrigation.secondsOn = 0.0f;
@@ -411,35 +380,7 @@ int main(int argc, char* argv[])
       // Optionally update previous_time to avoid long intervals when the pump starts again
          clock_gettime(CLOCK_MONOTONIC, &previous_time);
       }
-      if ((rainbirdRequest == TRUE) && (rainbirdReqDelay == 0)){
-         pubmsg.payload = rainbird_command1;
-         pubmsg.payloadlen = strlen(rainbird_command1);
-         pubmsg.qos = 0;
-         pubmsg.retained = 0;
-         deliveredtoken = 0;
-         if ((rc = MQTTClient_publishMessage(client, RAINBIRDCOMMAND_TOPICID, &pubmsg, &token)) != MQTTCLIENT_SUCCESS)
-         {
-            printf("Failed to publish rainbird command message for controller 1, return code %d\n", rc);
-            log_message("IrrigationMonitor Error == Failed to Publish Rainbird Command Message for controller 1. Return Code: %d\n", rc);
-            rc = EXIT_FAILURE;
-         }
-         pubmsg.payload = rainbird_command2;
-         pubmsg.payloadlen = strlen(rainbird_command2);
-         pubmsg.qos = 0;
-         pubmsg.retained = 0;
-         deliveredtoken = 0;
-         if ((rc = MQTTClient_publishMessage(client, RAINBIRDCOMMAND_TOPICID, &pubmsg, &token)) != MQTTCLIENT_SUCCESS)
-         {
-            printf("Failed to publish rainbird command message for controller 2, return code %d\n", rc);
-            log_message("IrrigationMonitor Error == Failed to Publish Rainbird Command Message for controller 2. Return Code: %d\n", rc);
-            rc = EXIT_FAILURE;
-         }
-         rainbirdRecvRequest = TRUE; 
-         rainbirdReqDelay = RAINBIRD_REQUEST_DELAY;
-         rainbirdRequest = FALSE;
-      } else if (rainbirdRequest == TRUE) {
-         rainbirdReqDelay--; 
-      }
+      
       if (training_mode && pumpState == ON) {
          FILE *file = fopen(training_filename, "a");
          if (file != NULL) {
@@ -458,44 +399,4 @@ int main(int argc, char* argv[])
    MQTTClient_disconnect(client, 10000);
    MQTTClient_destroy(&client);
    return rc;
-}
-void publishLogMessage(union LOG_ *log_data, const char *message_id) {
-   json_object *root = json_object_new_object();
-   char topic[100];
-   
-   // Create JSON object with proper types
-   // First two fields are integers
-   json_object_object_add(root, log_ClientData_var_name[0], 
-      json_object_new_int(log_data->log.Controller));
-   json_object_object_add(root, log_ClientData_var_name[1], 
-      json_object_new_int(log_data->log.Zone));  
-   json_object_object_add(root, log_ClientData_var_name[2], 
-      json_object_new_double(log_data->log.pressurePSI));
-   json_object_object_add(root, log_ClientData_var_name[3], 
-      json_object_new_double(log_data->log.temperatureF));
-   json_object_object_add(root, log_ClientData_var_name[4], 
-      json_object_new_double(log_data->log.intervalFlow));
-   json_object_object_add(root, log_ClientData_var_name[5], 
-      json_object_new_double(log_data->log.amperage));
-   json_object_object_add(root, log_ClientData_var_name[6], 
-      json_object_new_double(log_data->log.secondsOn));
-   json_object_object_add(root, log_ClientData_var_name[7], 
-      json_object_new_double(log_data->log.gallonsTank));
-
-
-   const char *json_string = json_object_to_json_string(root);
-   
-   // Create topic string with message_id
-   snprintf(topic, sizeof(topic), "%s%s/", LOG_JSONID, message_id);
-   
-   // Prepare and publish MQTT message
-   pubmsg.payload = (void *)json_string;
-   pubmsg.payloadlen = strlen(json_string);
-   pubmsg.qos = QOS;
-   pubmsg.retained = 0;
-   
-   MQTTClient_publishMessage(client, topic, &pubmsg, &token);
-   MQTTClient_waitForCompletion(client, token, TIMEOUT);
-   
-   json_object_put(root);
 }

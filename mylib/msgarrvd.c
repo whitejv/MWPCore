@@ -34,7 +34,7 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
    else if ( strcmp(topicName, WELLSENS_TOPICID) == 0) {
       memcpy(wellSens_.data_payload, message->payload, message->payloadlen);
       if (verbose) {for(i=0; i < WELLSENS_LEN; i++) {printf("%0x ", wellSens_.data_payload[i]);}}
-      printf("w\n");
+      printf("w-%d\n", wellSens_.well.cycle_count);
    }
    else if ( strcmp(topicName, WELL3SENS_TOPICID) == 0) {
        memcpy(well3Sens_.data_payload, message->payload, message->payloadlen);
@@ -79,6 +79,11 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
    else if ( strcmp(topicName, MONITOR_TOPICID) == 0) {
       memcpy(monitor_.data_payload, message->payload, message->payloadlen);
       if (verbose) {for(i=0; i < MONITOR_LEN; i++) { printf("%0x ", monitor_.data_payload[i]);}}
+      printf(".\n");
+   }
+   else if ( strcmp(topicName, IRRIGATIONRESPONSE_TOPICID) == 0) {
+      memcpy(irrigationResponse_.data_payload, message->payload, message->payloadlen);
+      if (verbose) {for(i=0; i < IRRIGATIONMON_LEN; i++) { printf("%0x ", irrigationResponse_.data_payload[i]);}}
       printf(".\n");
    }
    else if ( strcmp(topicName, ALERT_TOPICID) == 0) {
