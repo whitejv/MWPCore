@@ -10,3 +10,4 @@ compile_commands.json
 CTestTestfile.cmake
 .prettierr
 *.log
+.DS_Store*
