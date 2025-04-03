@@ -10,8 +10,4 @@ compile_commands.json
 CTestTestfile.cmake
 .prettierr
 *.log
-<<<<<<< HEAD
 .DS_Store*
-=======
-.qodo
->>>>>>> 95a8911 (Major Update to Unified Sensor; Seperated Rainbird Comms; Calibrated Sensors.)
