@@ -51,11 +51,11 @@ nohup ${BIN_DIR}/monitor -P >> "${LOG_DIR}/monitor.log" 2>&1 &
 sleep 3
 
 log_message "Starting Blynk Interface App"
-nohup ${BIN_DIR}/blynkWater -P >> "${LOG_DIR}/blynk.log" 2>&1 &
+nohup ${BIN_DIR}/blynkWater -P >> "${LOG_DIR}/blynkW.log" 2>&1 &
 sleep 3
 
 log_message "Starting Alert Interface App"
-nohup ${BIN_DIR}/alert -P >> "${LOG_DIR}/blynk.log" 2>&1 &
+nohup ${BIN_DIR}/alert -P >> "${LOG_DIR}/blynkA.log" 2>&1 &
 sleep 3
 
 log_message "Starting Blynk Alert Interface App"

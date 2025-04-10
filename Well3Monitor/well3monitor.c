@@ -211,7 +211,7 @@ if (wellMon_.well.well_pump_3_on == 1) {
     log_.log.intervalFlow = well3Mon_.well3.intervalFlow;
     log_.log.amperage = well3Mon_.well3.amperage;
     log_.log.secondsOn = well3Mon_.well3.secondsOn;
-    log_.log.gallonsTank = 0;
+    log_.log.gallonsTank = tankMon_.tank.tank_gallons;
 
     publishLogMessage(client, &log_, "well3");
 } else {
@@ -276,6 +276,10 @@ void MyMQTTSetup(char* mqtt_address){
    printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", WELLMON_TOPICID, WELLMON_CLIENTID,  QOS);
    log_message("well3Monitor: Subscribing to topic: %s for client: %s\n", WELLMON_TOPICID, WELLMON_CLIENTID );
    MQTTClient_subscribe(client, WELLMON_TOPICID, QOS);
+
+   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", TANKMON_TOPICID, TANKMON_CLIENTID, QOS);
+   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", TANKMON_TOPICID, TANKMON_CLIENTID);
+   MQTTClient_subscribe(client, TANKMON_TOPICID, QOS);
 }
 void MyMQTTPublish() {
    int rc;

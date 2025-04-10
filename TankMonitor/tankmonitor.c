@@ -210,31 +210,33 @@ int main(int argc, char* argv[])
        
       MyMQTTPublish() ;
 
-      clock_gettime(CLOCK_MONOTONIC, &current_time);
+      if (wellMon_.well.well_pump_3_on == 1 || wellMon_.well.irrigation_pump_on == 1) {
+    
+         clock_gettime(CLOCK_MONOTONIC, &current_time);
 
-      if (previous_time.tv_sec != 0 || previous_time.tv_nsec != 0) {
-         // Calculate the time slice in seconds since the last execution
-         tankMon_.tank.secondsOn = (float)(current_time.tv_sec - previous_time.tv_sec) +
-                                       (float)(current_time.tv_nsec - previous_time.tv_nsec) / 1.0e9f;
-      } else {
-         // This is the first execution; initialize secondsOn to 0
-         tankMon_.tank.secondsOn = 0.0f;
-      }
+         if (previous_time.tv_sec != 0 || previous_time.tv_nsec != 0) {
+            // Calculate the time slice in seconds since the last execution
+            tankMon_.tank.secondsOn = (float)(current_time.tv_sec - previous_time.tv_sec) +
+                                          (float)(current_time.tv_nsec - previous_time.tv_nsec) / 1.0e9f;
+         } else {
+            // This is the first execution; initialize secondsOn to 0
+            tankMon_.tank.secondsOn = 0.0f;
+         }
 
-      // Update the previous timestamp to the current time
-      previous_time = current_time;
-      // Populate the log structure
-      log_.log.Controller = 5;
-      log_.log.Zone = 0;
-      log_.log.pressurePSI = tankMon_.tank.water_height;
-      log_.log.temperatureF = tankMon_.tank.temperatureF;
-      log_.log.intervalFlow = tankMon_.tank.intervalFlow;
-      log_.log.amperage = wellSens_.well.adc_x5;
-      log_.log.secondsOn = tankMon_.tank.secondsOn ;
-      log_.log.gallonsTank = tankMon_.tank.tank_gallons;
-      
-      publishLogMessage(client, &log_, "tank");
-      
+         // Update the previous timestamp to the current time
+         previous_time = current_time;
+         // Populate the log structure
+         log_.log.Controller = 5;
+         log_.log.Zone = 0;
+         log_.log.pressurePSI = tankMon_.tank.water_height;
+         log_.log.temperatureF = tankMon_.tank.temperatureF;
+         log_.log.intervalFlow = tankMon_.tank.intervalFlow;
+         log_.log.amperage = wellSens_.well.adc_x5;
+         log_.log.secondsOn = tankMon_.tank.secondsOn ;
+         log_.log.gallonsTank = tankMon_.tank.tank_gallons;
+         
+         publishLogMessage(client, &log_, "tank");
+   }
       if (training_mode && pumpState == ON) {
          FILE *file = fopen(training_filename, "a");
          if (file != NULL) {

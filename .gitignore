@@ -11,3 +11,4 @@ CTestTestfile.cmake
 .prettierr
 *.log
 .DS_Store*
+.qodo

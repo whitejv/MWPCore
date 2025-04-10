@@ -183,6 +183,10 @@ int main(int argc, char* argv[])
    log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", WELLMON_TOPICID, WELLMON_CLIENTID);
    MQTTClient_subscribe(client, WELLMON_TOPICID, QOS);
 
+   printf("Subscribing to topic: %s\nfor client: %s using QoS: %d\n\n", TANKMON_TOPICID, TANKMON_CLIENTID, QOS);
+   log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n", TANKMON_TOPICID, TANKMON_CLIENTID);
+   MQTTClient_subscribe(client, TANKMON_TOPICID, QOS);
+
    printf("Subscribing to topic: %s for client: %s using QoS: 0\n", IRRIGATIONRESPONSE_TOPICID, IRRIGATIONRESPONSE_CLIENTID );
    log_message("IrrigationMonitor Subscribing to topic: %s for client: %s\n",IRRIGATIONRESPONSE_TOPICID, IRRIGATIONRESPONSE_CLIENTID);
    MQTTClient_subscribe(client, IRRIGATIONRESPONSE_TOPICID, 0);
@@ -370,7 +374,7 @@ int main(int argc, char* argv[])
          log_.log.intervalFlow = irrigationMon_.irrigation.intervalFlow;
          log_.log.amperage = irrigationMon_.irrigation.amperage;
          log_.log.secondsOn = irrigationMon_.irrigation.secondsOn ;
-         log_.log.gallonsTank = 0;
+         log_.log.gallonsTank = tankMon_.tank.tank_gallons;
          
          publishLogMessage(client, &log_, "irrigation");
       } else {

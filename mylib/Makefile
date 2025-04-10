@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pi/MWPCore/mylib
+CMAKE_SOURCE_DIR = /home/pi/MWPCore
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pi/MWPCore/mylib
+CMAKE_BINARY_DIR = /home/pi/MWPCore
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -85,16 +85,61 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
 
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
+.PHONY : list_install_components
+
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
+.PHONY : list_install_components/fast
+
+# Special rule for the target install
+install: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install
+
+# Special rule for the target install
+install/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
+	/usr/bin/cmake -P cmake_install.cmake
+.PHONY : install/fast
+
+# Special rule for the target install/local
+install/local: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local
+
+# Special rule for the target install/local
+install/local/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
+	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+.PHONY : install/local/fast
+
+# Special rule for the target install/strip
+install/strip: preinstall
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip
+
+# Special rule for the target install/strip
+install/strip/fast: preinstall/fast
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
+	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+.PHONY : install/strip/fast
+
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MWPCore/mylib/CMakeFiles /home/pi/MWPCore/mylib//CMakeFiles/progress.marks
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MWPCore/mylib/CMakeFiles 0
+	cd /home/pi/MWPCore && $(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MWPCore/CMakeFiles /home/pi/MWPCore/mylib//CMakeFiles/progress.marks
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mylib/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pi/MWPCore/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clean
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mylib/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,30 +148,31 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mylib/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mylib/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/pi/MWPCore && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-#=============================================================================
-# Target rules for targets named mylib
+# Convenience name for target.
+mylib/CMakeFiles/mylib.dir/rule:
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mylib/CMakeFiles/mylib.dir/rule
+.PHONY : mylib/CMakeFiles/mylib.dir/rule
 
-# Build rule for target.
-mylib: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mylib
+# Convenience name for target.
+mylib: mylib/CMakeFiles/mylib.dir/rule
 .PHONY : mylib
 
 # fast build rule for target.
 mylib/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/build
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/build
 .PHONY : mylib/fast
 
 flowmon.o: flowmon.c.o
@@ -134,7 +180,7 @@ flowmon.o: flowmon.c.o
 
 # target to build an object file
 flowmon.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/flowmon.c.o
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/flowmon.c.o
 .PHONY : flowmon.c.o
 
 flowmon.i: flowmon.c.i
@@ -142,7 +188,7 @@ flowmon.i: flowmon.c.i
 
 # target to preprocess a source file
 flowmon.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/flowmon.c.i
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/flowmon.c.i
 .PHONY : flowmon.c.i
 
 flowmon.s: flowmon.c.s
@@ -150,7 +196,7 @@ flowmon.s: flowmon.c.s
 
 # target to generate assembly for a file
 flowmon.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/flowmon.c.s
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/flowmon.c.s
 .PHONY : flowmon.c.s
 
 logMsg.o: logMsg.c.o
@@ -158,7 +204,7 @@ logMsg.o: logMsg.c.o
 
 # target to build an object file
 logMsg.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/logMsg.c.o
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/logMsg.c.o
 .PHONY : logMsg.c.o
 
 logMsg.i: logMsg.c.i
@@ -166,7 +212,7 @@ logMsg.i: logMsg.c.i
 
 # target to preprocess a source file
 logMsg.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/logMsg.c.i
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/logMsg.c.i
 .PHONY : logMsg.c.i
 
 logMsg.s: logMsg.c.s
@@ -174,7 +220,7 @@ logMsg.s: logMsg.c.s
 
 # target to generate assembly for a file
 logMsg.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/logMsg.c.s
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/logMsg.c.s
 .PHONY : logMsg.c.s
 
 logTest.o: logTest.c.o
@@ -182,7 +228,7 @@ logTest.o: logTest.c.o
 
 # target to build an object file
 logTest.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/logTest.c.o
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/logTest.c.o
 .PHONY : logTest.c.o
 
 logTest.i: logTest.c.i
@@ -190,7 +236,7 @@ logTest.i: logTest.c.i
 
 # target to preprocess a source file
 logTest.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/logTest.c.i
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/logTest.c.i
 .PHONY : logTest.c.i
 
 logTest.s: logTest.c.s
@@ -198,7 +244,7 @@ logTest.s: logTest.c.s
 
 # target to generate assembly for a file
 logTest.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mylib.dir/build.make CMakeFiles/mylib.dir/logTest.c.s
+	cd /home/pi/MWPCore && $(MAKE) $(MAKESILENT) -f mylib/CMakeFiles/mylib.dir/build.make mylib/CMakeFiles/mylib.dir/logTest.c.s
 .PHONY : logTest.c.s
 
 # Help Target
@@ -208,6 +254,10 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... install"
+	@echo "... install/local"
+	@echo "... install/strip"
+	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... mylib"
 	@echo "... flowmon.o"
@@ -230,6 +280,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/pi/MWPCore && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
