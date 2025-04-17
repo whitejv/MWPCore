@@ -145,19 +145,19 @@ int main(int argc, char *argv[])
       alarmSummary = 0;
 
       /**	1 -	Critical	Tank Critically Low	*/
-      printf("%s %x\n", alarmInfo[1].label, tankMon_.tank.float2);
+      //printf("%s %x\n", alarmInfo[1].label, tankMon_.tank.float2);
       processAlarmGeneric(&alarms[1], alarmInfo[1].conditional1, tankMon_.tank.float2, alarmInfo[1].trigValue1);
       /**	2 - Critical	Tank Overfill	*/
-      printf("%s %f\n", alarmInfo[2].label,tankMon_.tank.tank_gallons);
+      //printf("%s %f\n", alarmInfo[2].label,tankMon_.tank.tank_gallons);
       processAlarmGeneric(&alarms[2], alarmInfo[2].conditional1, (int)tankMon_.tank.tank_gallons, alarmInfo[2].trigValue1);
       /**	3 - Critical	Irrigation Pump Temp Low	*/
-      printf("%s %f\n",  alarmInfo[3].label, irrigationMon_.irrigation.temperatureF);
+     //printf("%s %f\n",  alarmInfo[3].label, irrigationMon_.irrigation.temperatureF);
       processAlarmGeneric(&alarms[3], alarmInfo[3].conditional1, (int)irrigationMon_.irrigation.temperatureF, alarmInfo[3].trigValue1);
       /**	4 - Critical	Irrigation Pump Temp Low	*/
-      printf("%s %f\n", alarmInfo[4].label, houseMon_.house.temperatureF);
+      //printf("%s %f\n", alarmInfo[4].label, houseMon_.house.temperatureF);
       processAlarmGeneric(&alarms[4], alarmInfo[4].conditional1, (int)houseMon_.house.temperatureF, alarmInfo[4].trigValue1);        
       /**	5 -	Critical	House Water Pressure Low	*/
-      printf("%s %d\n", alarmInfo[5].label, houseMon_.house.pressurePSI);
+      //printf("%s %d\n", alarmInfo[5].label, houseMon_.house.pressurePSI);
       processAlarmGeneric(&alarms[5], alarmInfo[5].conditional1, (int)houseMon_.house.pressurePSI, alarmInfo[5].trigValue1);  
 
       

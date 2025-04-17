@@ -283,7 +283,7 @@ float GallonsInTankPress(void) {
    PresSensorRawValue = wellSens_.well.adc_x5;
            
    PresSensorValue = moving_average(PresSensorRawValue, samples, &sample_index, window_size);
-   printf("Sample: %d, Raw Pressure Sensor: %f Moving average Sensor: %f\n", sample_index, PresSensorRawValue, PresSensorValue);
+   //printf("Sample: %d, Raw Pressure Sensor: %f Moving average Sensor: %f\n", sample_index, PresSensorRawValue, PresSensorValue);
    /*
       *** Use the Equation y=Constandx(x) + Constant solve for x to compute Water Height in tank
       */

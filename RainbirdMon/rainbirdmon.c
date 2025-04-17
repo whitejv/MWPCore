@@ -261,7 +261,9 @@ int main(int argc, char* argv[])
          rainbirdRequest = TRUE;
       }
       else if ((pumpState == OFF) && (lastpumpState == ON)){
+         sleep(2) ; //slight delay so log data can be written before controller and zone are reset
          MyMQTTPublish(0, 0);
+         lastpumpState = OFF;
       }
   
       if ((rainbirdRequest == TRUE) && (rainbirdReqDelay == 0)){
@@ -276,6 +278,11 @@ int main(int argc, char* argv[])
             log_message("RainbirdMon Error == Failed to Publish Rainbird Command Message for controller 1. Return Code: %d\n", rc);
             rc = EXIT_FAILURE;
          }
+         
+         // Wait for a second before sending the second command
+         sleep(1);
+
+         // Now send the second command
          pubmsg.payload = rainbird_command2;
          pubmsg.payloadlen = strlen(rainbird_command2);
          pubmsg.qos = 0;
