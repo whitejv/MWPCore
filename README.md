@@ -21,7 +21,15 @@ Milano Water Project Core Functions
 
 ## Add to Cron for Start on Reboot
 - -> crontab -e
-- -> add the following line to the bottom of the cron file: @reboot sleep 20 && bash /home/pi/MWPCore/h2o.sh
+- -> add the following line to the bottom of the cron file:
+- ---> @reboot sleep 20 && bash /home/pi/MWPCore/h2o.sh
+- ---> @reboot sleep 10 && . /home/pi/.profile && /home/pi/telegraf/telegraf --config /home/pi/.telegraf/telegraf.conf > >
+- ---> #
+- ---> # Stop all processes at 1:02 AM daily with logging
+- ---> 2 1 * * * /home/pi/MWPCore/kill_h2o.sh >/dev/null 2>&1
+- ---> #
+- ---> # Start all processes at 1:04 AM daily with logging
+- ---> 4 1 * * * /home/pi/MWPCore/h2o.sh >/dev/null 2>&1
 - -> cd MWPCore
 - -> chmod +x h2o.sh
 - -> reboot
