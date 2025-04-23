@@ -40,6 +40,10 @@ done
 log_message "All processes stopped. Waiting 5 seconds before proceeding..."
 sleep 5
 
+# Remove old log files
+log_message "Cleaning up old log files..."
+rm -rf "${LOG_DIR}"
+
 # Verify nothing is left running
 log_message "Checking for remaining processes..."
 ps -ef | grep -E "$(printf "%s|" "${PROCESSES[@]}")" | grep -v grep >> "$KILL_LOG"
