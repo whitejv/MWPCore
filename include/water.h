@@ -577,7 +577,7 @@ char* well3sens_ClientData_var_name [] = {
 * Type: data
 * MQTT Client ID: Well Flow Client
 * MQTT Topic ID: 
-* MSG Length: 31
+* MSG Length: 26
 *  word #        data type            variable                description        min        max        nominal
 *  0        int            flowData1                flow sensor 1        0        0        0
 *  1        int            flowData2                flow sensor 2        0        0        0
@@ -621,27 +621,27 @@ union   WELLSENS_  {
       int   flowData3	;		//   spare
       int   adc_sensor	;		//   water pressure (psi)
       int   gpio_sensor	;		//   GPIO discretes
-      int   temp1	;		//   xxx Temp
-      int   temp1_f	;		//   xxx Temp in floating point
+      int   temp1	;		//   House Supply Temp
+      int   temp1_f	;		//   House Supply Temp in floating point
       int   tempSensorcount	;		//   Number of Temp Sensors Detected
       int   cycle_count	;		//   Cycle Counter
       int   fw_version	;		//   FW Version
       int   GPIO_x1	;		//   Discrete IN 
       int   GPIO_x2	;		//   Discrete OUT
       float   adc_x1	;		//   xxx Pump amperage on/off
-      float   adc_x2	;		//   xxx Pump amperage on/off
+      float   adc_x2	;		//   Well 3  Pump amperage on/off
       float   adc_x3	;		//   xxx Pump amperage on/off
       float   adc_x4	;		//   xxx Pump amperage on/off
       float   adc_x5	;		//   Tank Hydrostatic Pressure
-      float   adc_x6	;		//   xxx Water Pressure 
-      float   adc_x7	;		//   xxx Water Pressure 
-      float   adc_x8	;		//   xxx Water Pressure 
+      float   adc_x6	;		//   House Water Pressure 
+      float   adc_x7	;		//   Irrigation Water Pressure 
+      float   adc_x8	;		//   Well 3 Water Pressure 
       float   tempx	;		//   System Temp
       float   pressurex	;		//   Atmospheric Pressure
       float   humidity	;		//   % Humididity
-      float   temp2	;		//   xxx Temp
-      float   temp3	;		//   xxx Temp
-      float   temp4	;		//   xxx Temp
+      float   temp2	;		//   Irrigation Pump Temp
+      float   temp3	;		//   Ambient Temp
+      float   temp4	;		//   Well 3 Supply Temp
    }  well  ;
 }  ;
 union  WELLSENS_  wellSens_  ;
@@ -1209,7 +1209,7 @@ char* well3mon_ClientData_var_name [] = {
 * Type: data
 * MQTT Client ID: Monitor Client
 * MQTT Topic ID: 
-* MSG Length: 30
+* MSG Length: 38
 *  word #        data type            variable                description        min        max        nominal
 *  0        float            Tank_Water_Height                        0        8        
 *  1        float            Tank_Gallons                        0        2500        
@@ -1241,12 +1241,20 @@ char* well3mon_ClientData_var_name [] = {
 *  27        float            Irrig_4_LED_Color                        0        6        
 *  28        float            Controller                        0        6        
 *  29        float            Zone                        0        32        
+*  30        float            Pump_1_RunCount                        5        25        
+*  31        float            Pump_1_RunTIme                        5        15        
+*  32        float            Pump_2_RunCount                        5        25        
+*  33        float            Pump_2_RunTIme                        5        15        
+*  34        float            Pump_3_RunCount                        3        10        
+*  35        float            Pump_3_RunTIme                        290        300        
+*  36        float            Pump_4_RunCount                        12        35        
+*  37        float            Pump_4_RunTIme                        200        200        
 */
 
 const char MONITOR_CLIENTID[] =    "Monitor Client" ;
 const char MONITOR_TOPICID[] =  "mwp/data/monitor/monitor/";
 const char MONITOR_JSONID[] =  "mwp/json/data/monitor/monitor/";
-#define MONITOR_LEN 30
+#define MONITOR_LEN 38
 
 union   MONITOR_  {
    float     data_payload[MONITOR_LEN] ;
@@ -1282,6 +1290,14 @@ union   MONITOR_  {
       float   Irrig_4_LED_Color	;		//   
       float   Controller	;		//   
       float   Zone	;		//   
+      float   Pump_1_RunCount	;		//   
+      float   Pump_1_RunTime	;		//   
+      float   Pump_2_RunCount	;		//   
+      float   Pump_2_RunTime	;		//   
+      float   Pump_3_RunCount	;		//   
+      float   Pump_3_RunTime	;		//   
+      float   Pump_4_RunCount	;		//   
+      float   Pump_4_RunTime	;		//   
    }  monitor  ;
 }  ;
 union  MONITOR_  monitor_  ;
@@ -1317,6 +1333,14 @@ char* monitor_ClientData_var_name [] = {
     "Irrig_4_LED_Color",
     "Controller",
     "Zone",
+    "Pump_1_RunCount",
+    "Pump_1_RunTIme",
+    "Pump_2_RunCount",
+    "Pump_2_RunTIme",
+    "Pump_3_RunCount",
+    "Pump_3_RunTIme",
+    "Pump_4_RunCount",
+    "Pump_4_RunTIme",
 }  ;
 
 /*
@@ -1641,6 +1665,7 @@ char* log_ClientData_var_name [] = {
     "secondsOn",
     "gallonsTank",
 }  ;
+
 
 //#define MilanoWaterProject\IrrigationHeader.h  (created and maintained in Excel)
 /*********************************************************************************

@@ -105,10 +105,13 @@ int loop(MQTTClient blynkClient)
       return 0; // Indicate success for this cycle to main, but operation was skipped. Client not destroyed.
    }
 
-   for (i=0; i<=MONITOR_LEN-13; i++) {
+   for (i=0; i<=MONITOR_LEN-23; i++) {
       json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_double(monitor_.data_payload[i]));
    }
-   for (i=18; i<=MONITOR_LEN-1; i++) {
+   for (i=18; i<=MONITOR_LEN-17; i++) {
+      json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_int(monitor_.data_payload[i]));
+   }
+   for (i=28; i<=MONITOR_LEN-9; i++) {
       json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_int(monitor_.data_payload[i]));
    }
    
@@ -117,7 +120,7 @@ int loop(MQTTClient blynkClient)
    pubmsg.payloadlen = strlen(json_string);
    pubmsg.qos = QOS;
    pubmsg.retained = 0;
-   
+   printf("Publishing JSON to topic %s: %s\n", BLYNK_TOPIC, json_string);
    rc = MQTTClient_publishMessage(blynkClient, BLYNK_TOPIC, &pubmsg, &token);
    if (rc != MQTTCLIENT_SUCCESS) {
       printf("MQTT Publish (JSON) failed to topic %s, rc %d. Destroying client in loop().\n", BLYNK_TOPIC, rc);
