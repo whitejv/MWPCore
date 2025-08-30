@@ -7,7 +7,7 @@
 extern int verbose;
 
 #define LITRES_TO_GALLONS 0.264172 // 1 litre = 0.264172 gallons
-#define PULSE_COUNT_THRESHOLD 100
+#define PULSE_COUNT_THRESHOLD 175
 #define MAX_SAMPLES 20
 #define NO_PULSE_RESET_TIME 60
 
