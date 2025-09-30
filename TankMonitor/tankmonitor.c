@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L // For clock_gettime and CLOCK_MONOTONIC
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -431,27 +432,47 @@ if (wellMon_.well.well_pump_3_on  == 1) {
    }
 }
 
+// Robust moving_average function
 float moving_average(float new_sample, float samples[], uint8_t *sample_index, uint8_t window_size) {
-    static float sum = 0;
-    static uint8_t n = 0;
+    static float sum = 0.0f;
+    static uint8_t n_valid_samples = 0; // Number of valid samples currently in the sum/window
 
-    // Remove the oldest sample from the sum
-    sum -= samples[*sample_index];
-
-    // Add the new sample to the sum
-    sum += new_sample;
-
-    // Replace the oldest sample with the new sample
-    samples[*sample_index] = new_sample;
-
-    // Update the sample index
-    *sample_index = (*sample_index + 1) % window_size;
-
-    // Update the number of samples, up to the window size
-    if (n < window_size) {
-        n++;
+    // Check for NaN or Infinity in new_sample
+    if (!isfinite(new_sample)) {
+        if (verbose) {
+            printf("Warning: moving_average received non-finite new_sample: %f. Ignoring sample.\n", new_sample);
+        }
+        // Return current average if available, otherwise 0 or new_sample itself if error propagation is desired
+        if (n_valid_samples > 0) {
+            return sum / n_valid_samples;
+        }
+        return 0.0f; // Or return new_sample to propagate NaN/Inf if that's preferred behavior
     }
 
-    // Calculate and return the moving average
-    return sum / n;
+    if (window_size == 0) { // Prevent division by zero if window_size is erroneously 0
+        return new_sample; // Or 0.0f or some other error indicator
+    }
+
+    if (n_valid_samples < window_size) {
+        // Window is not yet full: just add the new sample
+        samples[*sample_index] = new_sample;
+        sum += new_sample;
+        n_valid_samples++;
+    } else {
+        // Window is full: subtract the oldest sample, then add the new one
+        sum -= samples[*sample_index]; // Subtract the actual oldest value that is being replaced
+        samples[*sample_index] = new_sample;
+        sum += new_sample;
+        // n_valid_samples remains equal to window_size
+    }
+
+    // Update the index for the next call (circular buffer)
+    *sample_index = (*sample_index + 1) % window_size;
+
+    // Calculate average. n_valid_samples should be > 0 if we added a finite sample.
+    if (n_valid_samples == 0) { // Should only happen if window_size was 0 and first sample was NaN/Inf
+         return 0.0f; 
+    }
+    
+    return sum / n_valid_samples;
 }

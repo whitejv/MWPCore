@@ -1,0 +1,22 @@
+﻿Alarm ID,Alarm Type,Label,Trigger Var1,Conditional1,TrigValue1,Operator,Trigger Var2,Conditional2,TrigValue2,TRIGGER_DELAY,Event Sent,Event Message
+0,INFO,spare,xx.xx,0,0,0,0,0,0,0,0,spare
+1,CRITICAL,Tank Level Critically Low,tankMon_.tank.float2,CONDITION_EQUAL,TRUE,,,0,0,5,FALSE,Water Level in Tank is Critically Low
+2,WARN,Tank Overfill Condition,tankMon_.tank.tank_gallons,CONDITION_GREATER_THAN,2275,,,0,0,5,FALSE,Tank Overfill Detected
+3,CRITICAL,Irrigation Pump Temp Low,irrigationMon_.irrigation.temperatureF,CONDITION_LESS_THAN,35,,,0,0,5,FALSE,Irrigation Pump Temperature Exceeding Low Limit
+4,CRITICAL,House Supply Temp Low,houseMon_.house.temperatureF,CONDITION_LESS_THAN,35,,,0,0,5,FALSE,
+5,CRITICAL,House Water Pressure Low,houseMon_.house .pressurePSI,CONDITION_LESS_THAN,40,,,0,0,5,FALSE,Household Water Pressure Critically Low
+6,CRITICAL,Irrigation Water Pressure Low,irrigationMon_.irrigation.pressurePSI,CONDITION_LESS_THAN,40,,,0,0,5,FALSE,Household Water Pressure Critically Low
+7,CRITICAL,Septic System Alert,wellMon_.well.septic_alert_on,CONDITION_EQUAL,TRUE,,,0,0,5,FALSE,Septic System Malfunction
+8,CRITICAL,Irrigation Pump Run Away,wellMon_.well.irrigation_pump_on,CONDITION_EQUAL,TRUE,AND,irrigationMon_.irrigation.gallonsMinute,CONDITION_LESS_THAN,2,5,FALSE,Irrigation Pump Running with No Flow
+9,CRITICAL,Well 3 Pump Run Away,wellMon_.well.well_pump_3_on,CONDITION_EQUAL,TRUE,AND,tankMon_.tank.gallonsMinute,CONDITION_LESS_THAN,2,5,FALSE,Well 3 Pump Running with No Flow
+10,WARN,Well 1 Not Starting,wellMon_.well.House_tank_pressure_switch_on,CONDITION_EQUAL,TRUE,AND,wellMon_.well.well_pump_1_on,CONDITION_EQUAL,FALSE,5,FALSE,Water Well Pumps Failed to Start
+11,WARN,Well 2 Not Starting,wellMon_.well.House_tank_pressure_switch_on,CONDITION_EQUAL,TRUE,AND,wellMon_.well.well_pump_2_on,CONDITION_EQUAL,FALSE,5,FALSE,Water Well Pumps Failed to Start
+12,WARN,Well 3 Not Starting,wellMon_.well.well_pump_3_on,CONDITION_EQUAL,TRUE,AND,tankMon_.tank.gallonsMinute,CONDITION_LESS_THAN,2,5,FALSE,Water Well #3 Pump ON but Flow is Less Than 2 Gal per Minute
+13,WARN,Well 1 RunCount Exceeded,monitor_.monitor.Pump_1_RunCount,CONDITION_GREATER_THAN,25,,,0,0,0,FALSE,Pump 1 Run Count is Excessive
+14,INFO,Well 1 RunTime Exceeded,monitor_.monitor.Pump_1_RunTime,CONDITION_GREATER_THAN,15,,,0,0,0,FALSE,Pump 1 Run Time is Excessive
+15,WARN,Well 2 RunCount Exceeded,monitor_.monitor.Pump_2_RunCount,CONDITION_GREATER_THAN,25,,,0,0,0,FALSE,Pump 2 Run Count is Excessive
+16,INFO,Well 2 RunTime Exceeded,monitor_.monitor.Pump_2_RunTime,CONDITION_GREATER_THAN,15,,,0,0,0,FALSE,Pump 2 Run Time is Excessive
+17,WARN,Well 3 RunCount Exceeded,monitor_.monitor.Pump_3_RunCount,CONDITION_GREATER_THAN,10,,,0,0,0,FALSE,Pump 3 Run Count is Excessive
+18,INFO,Well 3 RunTime Exceeded,monitor_.monitor.Pump_3_RunTime,CONDITION_GREATER_THAN,300,,,0,0,0,FALSE,Pump 3 Run Time is Excessive
+19,WARN,Irrigation Pump RunCount Exceeded,monitor_.monitor.Pump_4_RunCount,CONDITION_GREATER_THAN,25,,,0,0,0,FALSE,Pump 4 Run Count is Excessive
+20,INFO,Irrigation Pump RunTime Exceeded,monitor_.monitor.Pump_4_RunTime,CONDITION_GREATER_THAN,200,,,0,0,0,FALSE,Pump 4 Run Time is Excessive

@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
    int controller = 0;
    int zone = 0;  
 
-   #define RAINBIRD_COMMAND_DELAY 5
+   #define RAINBIRD_COMMAND_DELAY 10
    #define RAINBIRD_REQUEST_DELAY 5
    int rainbirdRequest = FALSE;
    int rainbirdRecvRequest = FALSE;

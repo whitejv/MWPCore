@@ -9,6 +9,7 @@ add_subdirectory (./WellMonitor)
 add_subdirectory (./HouseMonitor)
 add_subdirectory (./Well3Monitor)
 add_subdirectory (./SysAlert)
+add_subdirectory (./SysAlertMon)
 add_subdirectory (./Blynk)
 add_subdirectory (./BlynkAlert)
 add_custom_target(clean-all
