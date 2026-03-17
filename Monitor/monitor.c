@@ -220,24 +220,25 @@ int main(int argc, char *argv[])
        * Compute Monitor Values Based on Inputs from
        * Sensor Data and Format for easy use with Blynk
        */
-      monitor_.monitor.Tank_Water_Height = tankMon_.tank.water_height;
-      monitor_.monitor.Tank_Gallons = tankMon_.tank.tank_gallons;
-      monitor_.monitor.Tank_Percent_Full = tankMon_.tank.tank_per_full;   
-      monitor_.monitor.House_Pressure = houseMon_.house.pressurePSI;
-      monitor_.monitor.Well3_Pressure = well3Mon_.well3.pressurePSI  ;
-      monitor_.monitor.Irrigation_Pressure = irrigationMon_.irrigation.pressurePSI;
-      monitor_.monitor.House_Gallons_Minute = houseMon_.house.gallonsMinute;
-      monitor_.monitor.Well3_Gallons_Minute = well3Mon_.well3.gallonsMinute ;
-      monitor_.monitor.Irrigation_Gallons_Minute = irrigationMon_.irrigation.gallonsMinute;
-      monitor_.monitor.House_Gallons_Day = houseMon_.house.gallonsDay;
-      monitor_.monitor.Well3_Gallons_Day = well3Mon_.well3.gallonsDay ;
-      monitor_.monitor.Irrigation_Gallons_Day = irrigationMon_.irrigation.gallonsDay;
-      monitor_.monitor.System_Temp = wellMon_.well.system_temp;
-      monitor_.monitor.House_Water_Temp = houseMon_.house.temperatureF;
-      monitor_.monitor.Irrigation_Pump_Temp = irrigationMon_.irrigation.temperatureF;
-      monitor_.monitor.Air_Temp = tankMon_.tank.temperatureF;
-      monitor_.monitor.Controller = irrigationMon_.irrigation.controller;
-      monitor_.monitor.Zone = irrigationMon_.irrigation.zone;
+      monitor_.monitor.tank_height_ft = tankMon_.tank.water_height;
+      monitor_.monitor.tank_gallons = tankMon_.tank.tank_gallons;
+      monitor_.monitor.tank_percent_full = tankMon_.tank.tank_per_full;
+      monitor_.monitor.house_pressure_psi = houseMon_.house.pressurePSI;
+      monitor_.monitor.well3_pressure_psi = well3Mon_.well3.pressurePSI;
+      monitor_.monitor.irrigation_pressure_psi = irrigationMon_.irrigation.pressurePSI;
+      monitor_.monitor.house_gpm = houseMon_.house.gallonsMinute;
+      monitor_.monitor.well3_gpm = well3Mon_.well3.gallonsMinute;
+      monitor_.monitor.irrigation_gpm = irrigationMon_.irrigation.gallonsMinute;
+      monitor_.monitor.house_gallons_day = houseMon_.house.gallonsDay;
+      monitor_.monitor.well3_gallons_day = well3Mon_.well3.gallonsDay;
+      monitor_.monitor.irrigation_gallons_day = irrigationMon_.irrigation.gallonsDay;
+      monitor_.monitor.system_temp_f = wellMon_.well.system_temp;
+      monitor_.monitor.house_temp_f = houseMon_.house.temperatureF;
+      monitor_.monitor.irrigation_temp_f = irrigationMon_.irrigation.temperatureF;
+      monitor_.monitor.air_temp_f = tankMon_.tank.temperatureF;
+      monitor_.monitor.well3_temp_f = well3Mon_.well3.temperatureF;
+      monitor_.monitor.irrigation_controller = irrigationMon_.irrigation.controller;
+      monitor_.monitor.irrigation_zone = irrigationMon_.irrigation.zone;
       
       // Channel 2 Voltage Sensor 16 bit data
       //raw_voltage1_adc = well_sensor_payload[0];
@@ -309,15 +310,23 @@ int main(int argc, char *argv[])
       monitor_sensor(&sensors[3], irrigationMon_.irrigation.cycleCount);
       
 
-      monitor_.monitor.Well_1_LED_Bright = PumpCurrentSense[1] + sensors[0].is_offline;
-      monitor_.monitor.Well_2_LED_Bright = PumpCurrentSense[2] + sensors[1].is_offline;
-      monitor_.monitor.Well_3_LED_Bright = PumpCurrentSense[3] + sensors[2].is_offline;
-      monitor_.monitor.Irrig_4_LED_Bright = PumpCurrentSense[4] + sensors[3].is_offline;
+      monitor_.monitor.well_1_led_brightness = PumpCurrentSense[1] + sensors[0].is_offline;
+      monitor_.monitor.well_2_led_brightness = PumpCurrentSense[2] + sensors[1].is_offline;
+      monitor_.monitor.well_3_led_brightness = PumpCurrentSense[3] + sensors[2].is_offline;
+      monitor_.monitor.irrigation_4_led_brightness = PumpCurrentSense[4] + sensors[3].is_offline;
 
-      monitor_.monitor.Well_1_LED_Color = PumpLedColor[1];
-      monitor_.monitor.Well_2_LED_Color = PumpLedColor[2];
-      monitor_.monitor.Well_3_LED_Color = PumpLedColor[3];
-      monitor_.monitor.Irrig_4_LED_Color = PumpLedColor[4];
+      monitor_.monitor.well_1_led_color = PumpLedColor[1];
+      monitor_.monitor.well_2_led_color = PumpLedColor[2];
+      monitor_.monitor.well_3_led_color = PumpLedColor[3];
+      monitor_.monitor.irrigation_4_led_color = PumpLedColor[4];
+
+      monitor_.monitor.well_pump_1_on = wellMon_.well.well_pump_1_on;
+      monitor_.monitor.well_pump_2_on = wellMon_.well.well_pump_2_on;
+      monitor_.monitor.well_pump_3_on = wellMon_.well.well_pump_3_on;
+      monitor_.monitor.irrigation_pump_on = wellMon_.well.irrigation_pump_on;
+      monitor_.monitor.house_tank_pressure_switch_on = wellMon_.well.House_tank_pressure_switch_on;
+      monitor_.monitor.septic_alert_on = wellMon_.well.septic_alert_on;
+      monitor_.monitor.cycle = wellMon_.well.cycle_count;
 
       
       /*
@@ -365,8 +374,11 @@ int main(int argc, char *argv[])
       }
 
       if (verbose) {   
-         for (i=0; i<=MONITOR_LEN-1; i++) {
+         for (i=0; i<=MONITOR_LEN-29; i++) {
             printf("%s %f ", monitor_ClientData_var_name [i],monitor_.data_payload[i]);
+         }
+         for (i=18; i<=MONITOR_LEN-1; i++) {
+            printf("%s %d ", monitor_ClientData_var_name [i],(int)monitor_.data_payload[i]);
          }
          printf("%s", ctime(&t));
       }
@@ -382,11 +394,11 @@ int main(int argc, char *argv[])
          rc = EXIT_FAILURE;
       }
       json_object *root = json_object_new_object();
-      for (i=0; i<=MONITOR_LEN-13; i++) {
+      for (i=0; i<=MONITOR_LEN-29; i++) {
          json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_double(monitor_.data_payload[i]));
       }
       for (i=18; i<=MONITOR_LEN-1; i++) {
-         json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_int(monitor_.data_payload[i]));
+         json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_int((int)monitor_.data_payload[i]));
       }
       const char *json_string = json_object_to_json_string(root);
 

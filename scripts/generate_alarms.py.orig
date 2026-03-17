@@ -13,11 +13,9 @@ import numpy as np
 import os
 
 # --- Configuration ---
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(script_dir)
-CSV_INPUT_FILE = os.path.join(script_dir, 'alarms.csv')
-C_CONFIG_HEADER_OUTPUT_FILE = os.path.join(project_root, 'alarm_engine', 'alarm_config.h')
-C_LOGIC_INCLUDE_OUTPUT_FILE = os.path.join(project_root, 'alarm_engine', 'alarm_logic.c.inc')
+CSV_INPUT_FILE = os.path.join('scripts', 'alarms.csv')
+C_CONFIG_HEADER_OUTPUT_FILE = os.path.join('alarm_engine', 'alarm_config.h')
+C_LOGIC_INCLUDE_OUTPUT_FILE = os.path.join('alarm_engine', 'alarm_logic.c.inc')
 
 
 # --- Mappings ---

@@ -22,8 +22,10 @@
 #include "unistd.h"
 #include "MQTTClient.h"
 #include "../include/water.h"
-#include "../include/alert.h"
+#include "../alarm_engine/alarm_data_types.h"
 #include <stdbool.h> // Required for using 'bool' type
+
+
 
 // Add RECONNECT_DELAY_SECONDS for consistency
 #define RECONNECT_DELAY_SECONDS 5
@@ -112,6 +114,9 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
 
    alarmStatus alarmStat[ALARM_COUNT]; // Array of alarmStatus structures
    
+   // Static array to track if events have been sent for each alarm (0 = not sent, 1 = sent)
+   static int event_sent[ALARM_COUNT] = {0};
+   
 
    const char *ledcolor[] = {"Green",
                              "Blue",
@@ -133,7 +138,7 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
   
 
    if (initProperties == 0) {
-      for (i=0; i<=5; i++) {
+      for (i=0; i<ALARM_COUNT; i++) {
          // Set label
          sprintf(topic, "%s/%s/%s", BLYNK_DS, alert_ClientData_var_name[i], BLYNK_PROP_LABEL);
          strcpy(payload, alarmInfo[i].label);
@@ -141,6 +146,7 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
          pubmsg.payloadlen = strlen(payload);
          pubmsg.qos = 1;
          pubmsg.retained = 0;
+         printf("name topic & payload: %s %s\n", topic, payload);
          if ((rc = MQTTClient_publishMessage(blynkClient, topic, &pubmsg, &token)) != MQTTCLIENT_SUCCESS) {
             printf("Loop: Failed to publish initProperties (label) for %s, rc %d\n", alert_ClientData_var_name[i], rc);
             // Not destroying client for this failure, but logging it.
@@ -151,6 +157,7 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
          strcpy(payload, ledcolorPalette[alarmInfo[i].type]);
          pubmsg.payload = payload;
          pubmsg.payloadlen = strlen(payload);
+         printf("color topic & payload: %s %s\n", topic,payload);
          if ((rc = MQTTClient_publishMessage(blynkClient, topic, &pubmsg, &token)) != MQTTCLIENT_SUCCESS) {
             printf("Loop: Failed to publish initProperties (color) for %s, rc %d\n", alert_ClientData_var_name[i], rc);
             // Not destroying client for this failure, but logging it.
@@ -164,9 +171,9 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
    // Memcpy the payload to my bit packed structure
    
    memcpy(alarmStat, alert_.data_payload, sizeof(alarmStat));
-   for (i=0; i<=5; i++) {
-      //printf("%x\n", alert_.data_payload[i]);
-      //printf("Alarm %d: State: %d, Event: %d, Occurrences: %d, Internal: %d\n", i, alarmStat[i].alarmState, alarmStat[i].eventSend, alarmStat[i].occurences, alarmStat[i].internalState);
+   for (i=0; i<ALARM_COUNT; i++) {
+      printf("%x\n", alert_.data_payload[i]);
+      printf("Alarm %d: State: %d, Event: %d, Occurrences: %d, Internal: %d\n", i, alarmStat[i].alarmState, alarmStat[i].eventSend, alarmStat[i].occurences, alarmStat[i].internalState);
    }
    /* 
     * Send the alarm data to Blynk 100=active alarm; 0=inactive alarm; 1-99=occurrences
@@ -178,8 +185,8 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
        return 0; // Not a client failure, but can't proceed with this publish.
    }
    
-   for (i=0; i<=5; i++) {
-      if (alarmStat[i].alarmState == active) {
+   for (i=0; i<ALARM_COUNT; i++) {
+      if (alarmStat[i].alarmState == ALARM_STATE_ACTIVE) {
          alarmValue = 100;  // full scale if alarm is active
       }
       else {
@@ -193,6 +200,8 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
    pubmsg.payloadlen = strlen(json_string);
    pubmsg.qos = QOS;
    pubmsg.retained = 0;
+
+   printf("Publishing JSON to topic %s: %s\n", BLYNK_TOPIC, json_string);
 
    if ((rc = MQTTClient_publishMessage(blynkClient, BLYNK_TOPIC, &pubmsg, &token)) != MQTTCLIENT_SUCCESS) {
       printf("Loop: Failed to publish main JSON data to topic %s, rc %d. Destroying client.\n", BLYNK_TOPIC, rc);
@@ -217,23 +226,33 @@ int loop(MQTTClient blynkClient) // blynkClient is passed by value (handle copy)
     * Send the alarm event to Blynk - Only once per alarm event
     */
    if (muteCommand == 0) {
-      for (i=0; i<=5; i++) {
-         if (alarmStat[i].eventSend == 1) {
+      for (i=0; i<ALARM_COUNT; i++) {
+         if (alarmStat[i].eventSend == 1 && event_sent[i] == 0) {
             sprintf(topic, "%s/%s", BLYNK_EVENT, alert_ClientData_var_name[i]);
             strcpy(payload, alarmInfo[i].eventMessage);
             pubmsg.payload = payload;
             pubmsg.payloadlen = strlen(payload);
             pubmsg.qos = 1; // QOS for events
             pubmsg.retained = 0;
+            printf("Publishing event to topic %s: %s\n", topic, payload);
             if ((rc = MQTTClient_publishMessage(blynkClient, topic, &pubmsg, &token)) != MQTTCLIENT_SUCCESS) {
                 printf("Loop: Failed to publish event for %s, rc %d\n", alert_ClientData_var_name[i], rc);
                 // Not destroying client for this failure, but logging it.
                 // Consider if this should also be a critical failure.
             }
+            // Mark this event as sent
+            event_sent[i] = 1;
             // Add MQTTClient_waitForCompletion for event messages if QOS 1 requires it and delivery is critical.
          }
       }
    }
+   
+   // Reset sent flags if a clear command was received (allows resending on next activation)
+   if (clearCommand == 1) {
+      memset(event_sent, 0, sizeof(event_sent));  // Reset all to 0
+      clearCommand = 0;  // Reset the flag after processing
+   }
+   
    return 0; // Success for this loop iteration
 }
 
@@ -409,8 +428,10 @@ int main(int argc, char *argv[])
          printf("Main: Skipping Blynk Alert operations as client is not connected.\n");
       }
 
-      // TODO: Add yielding or other processing for the primary 'client' if necessary
-      // MQTTClient_yield(client, 100); // Example if it's not fully callback-driven or needs periodic work
+      // We MUST yield to give the MQTT clients processing time.
+      // Without this, the primary 'client' will never process incoming messages
+      // and its msgarrvd callback will not be called.
+      MQTTClient_yield();
 
       sleep(1); // Main application cycle delay
    }

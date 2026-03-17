@@ -36,7 +36,7 @@ async def check_zones(mqtt_server, controller_id):
     mqtt_client.subscribe("mwp/command/rainbird/command")
     mqtt_client.loop_start()
 
-    rainbird_ips = ["192.168.1.80", "192.168.1.79"]  # replace with your Rainbird IP addresses
+    rainbird_ips = ["192.168.1.245", "192.168.1.246"]  # replace with your Rainbird IP addresses back front
     rainbird_passwords = ["G0rainbird", "G0rainbird"]  # replace with your Rainbird passwords
 
     async with aiohttp.ClientSession() as session:

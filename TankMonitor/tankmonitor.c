@@ -200,8 +200,8 @@ int main(int argc, char* argv[])
       temperatureF = wellSens_.well.temp3;
       tankMon_.tank.temperatureF =    temperatureF;
 
-      Float100State = tankSens_.tank.gpio_sensor & 0x01;
-      Float25State = (tankSens_.tank.gpio_sensor & 0x02) >> 1;
+      Float100State = wellSens_.well.gpio_sensor & 0x01;
+      Float25State = (wellSens_.well.gpio_sensor & 0x02) >> 1;
       
       tankMon_.tank.float1 =    Float100State;
       tankMon_.tank.float2 =    Float25State;

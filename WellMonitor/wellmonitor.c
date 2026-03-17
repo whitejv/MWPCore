@@ -9,6 +9,7 @@
 #include "../include/water.h"
 
 int verbose = FALSE;
+int datalogger = FALSE;
 
 MQTTClient_deliveryToken deliveredtoken;
 
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
    int i;
    time_t t;
    time(&t);
- 
+   FILE *fptr;
    int SepticAlert = 0;
 
    float raw_voltage1_adc = 0;
@@ -70,10 +71,14 @@ int main(int argc, char *argv[])
    const char *mqtt_ip;
    int mqtt_port;
 
-   while ((opt = getopt(argc, argv, "vPD")) != -1) {
+   while ((opt = getopt(argc, argv, "vdPD")) != -1) {
       switch (opt) {
          case 'v':
                verbose = TRUE;
+               break;
+         case 'd':
+               datalogger = TRUE;
+               fptr = fopen(dataloggerfile, "a");
                break;
          case 'P':
                mqtt_ip = PROD_MQTT_IP;
@@ -84,13 +89,16 @@ int main(int argc, char *argv[])
                mqtt_port = DEV_MQTT_PORT;
                break;
          default:
-               fprintf(stderr, "Usage: %s [-v] [-P | -D]\n", argv[0]);
+               fprintf(stderr, "Usage: %s [-v] [-d] [-P | -D]\n", argv[0]);
                return 1;
       }
    }
 
    if (verbose) {
       printf("Verbose mode enabled\n");
+   }
+   if (datalogger) {
+      printf("Datalogger mode enabled\n");
    }
 
    if (mqtt_ip == NULL) {
@@ -145,11 +153,42 @@ int main(int argc, char *argv[])
    while (1)
    {
       time(&t);
+      if (datalogger == TRUE) {
+         //write the sensor data to a file in .csv format
+         fprintf(fptr, "%x,", wellSens_.well.flowData1);
+         fprintf(fptr, "%x,", wellSens_.well.flowData2);
+         fprintf(fptr, "%x,", wellSens_.well.flowData3);
+         fprintf(fptr, "%d,", wellSens_.well.adc_sensor);
+         fprintf(fptr, "%x,", wellSens_.well.gpio_sensor);
+         fprintf(fptr, "%d,", wellSens_.well.temp1);
+         fprintf(fptr, "%x,", wellSens_.well.temp1_f);
+         fprintf(fptr, "%d,", wellSens_.well.tempSensorcount);
+         fprintf(fptr, "%d,", wellSens_.well.cycle_count);
+         fprintf(fptr, "%d,", wellSens_.well.fw_version);
+         fprintf(fptr, "%x,", wellSens_.well.GPIO_x1);
+         fprintf(fptr, "%x,", wellSens_.well.GPIO_x2);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x1);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x2);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x3);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x4);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x5);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x6);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x7);
+         fprintf(fptr, "%f,", wellSens_.well.adc_x8);
+         fprintf(fptr, "%f,", wellSens_.well.tempx);
+         fprintf(fptr, "%f,", wellSens_.well.pressurex);
+         fprintf(fptr, "%f,", wellSens_.well.humidity);
+         fprintf(fptr, "%f,", wellSens_.well.temp2);
+         fprintf(fptr, "%f,", wellSens_.well.temp3);
+         fprintf(fptr, "%f,", wellSens_.well.temp4);
 
-     
-      raw_voltage1_adc = wellSens_.well.adc_x4;
-      if (raw_voltage1_adc > 1.) {
-         pump1_on = 1 ;
+         fprintf(fptr, "\n");
+         fflush(fptr);
+   }
+
+   raw_voltage1_adc = wellSens_.well.adc_x4;
+   if (raw_voltage1_adc > 1.) {
+      pump1_on = 1 ;
       }
       else {
          pump1_on = 0;
@@ -182,8 +221,8 @@ int main(int argc, char *argv[])
        */
 
 
-      SepticAlert = !((wellSens_.well.GPIO_x1 & 0x02)>1);
-      PressSwitState = !(wellSens_.well.GPIO_x1 & 0x01);
+      SepticAlert    = ((wellSens_.well.gpio_sensor & 0x04)>>2);
+      PressSwitState = ((wellSens_.well.gpio_sensor & 0x08)>>3);
 
       /*
        * Convert Raw Temp Sensor to degrees farenhiet

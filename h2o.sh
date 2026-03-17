@@ -55,11 +55,11 @@ nohup ${BIN_DIR}/blynkWater -P >> "${LOG_DIR}/blynkW.log" 2>&1 &
 sleep 3
 
 log_message "Starting Alert Interface App"
-nohup ${BIN_DIR}/alert -P >> "${LOG_DIR}/blynkA.log" 2>&1 &
+nohup ${BIN_DIR}/SysAlertMon -P >> "${LOG_DIR}/blynkA.log" 2>&1 &
 sleep 3
 
 log_message "Starting Blynk Alert Interface App"
-nohup ${BIN_DIR}/blynkAlert -P >> "${LOG_DIR}/blynk.log" 2>&1 &
+#nohup ${BIN_DIR}/blynkAlert -P >> "${LOG_DIR}/blynk.log" 2>&1 &
 sleep 3
 
 log_message "Starting RainbirdSync for Controller 1"
@@ -69,7 +69,7 @@ sleep 3
 log_message "Starting RainbirdSync for Controller 2"
 source /home/pi/mwp_venv/bin/activate && nohup python ${BASE_DIR}/pyrainbird/RainbirdSync.py -P -C 2 >> "${LOG_DIR}/rainbird2.log" 2>&1 &
 
-log_message "All processes started. Waiting 30 minutes..."
-sleep 15
+log_message "All processes started."
+sleep 5
 
 log_message "### Startup Complete ###"

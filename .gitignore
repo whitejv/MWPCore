@@ -14,8 +14,26 @@ CTestTestfile.cmake
 .qodo
 .DS_Store
 
+# Other common binaries
+*.o
+*.obj
+*.a
+*.lib
+
 # Build output
 bin/
+alert
+blynkAlert
+blynkWater
+housemonitor
+irrigationmonitor
+monitor
+rainbirdmon
+SysAlertMon
+tankmonitor
+well3monitor
+wellmonitor
+
 
 # Python
 scripts/venv/

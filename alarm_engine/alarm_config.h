@@ -21,6 +21,28 @@ typedef struct {
     const int trigger_delay_seconds;
 } AlarmInfo;
 
-extern const AlarmInfo alarmInfo[ALARM_COUNT];
+const AlarmInfo alarmInfo[ALARM_COUNT] = {
+    /* 0 */ { 0, ALARM_TYPE_INFO, "spare", "spare", 0 },
+    /* 1 */ { 1, ALARM_TYPE_CRITICAL, "Tank Level Critically Low", "Water Level in Tank is Critically Low", 5 },
+    /* 2 */ { 2, ALARM_TYPE_WARN, "Tank Overfill Condition", "Tank Overfill Detected", 5 },
+    /* 3 */ { 3, ALARM_TYPE_CRITICAL, "Irrigation Pump Temp Low", "Irrigation Pump Temperature Exceeding Low Limit", 5 },
+    /* 4 */ { 4, ALARM_TYPE_CRITICAL, "House Supply Temp Low", "Household Water Supply is Near Freezing", 5 },
+    /* 5 */ { 5, ALARM_TYPE_CRITICAL, "House Water Pressure Low", "Household Water Pressure Critically Low", 5 },
+    /* 6 */ { 6, ALARM_TYPE_CRITICAL, "Irrigation Water Pressure Low", "Irrigation Water Pressure Critically Low", 60 },
+    /* 7 */ { 7, ALARM_TYPE_CRITICAL, "Septic System Alert", "Septic System Malfunction", 5 },
+    /* 8 */ { 8, ALARM_TYPE_CRITICAL, "Irrigation Pump Run Away", "Irrigation Pump Running with No Flow", 25 },
+    /* 9 */ { 9, ALARM_TYPE_CRITICAL, "Well 3 Pump Run Away", "Well 3 Pump Running with Low Flow", 60 },
+    /* 10 */ { 10, ALARM_TYPE_WARN, "Well 1 Not Starting", "Water Well Pumps 1 Failed to Start", 5 },
+    /* 11 */ { 11, ALARM_TYPE_WARN, "Well 2 Not Starting", "Water Well Pump 2 Failed to Start", 5 },
+    /* 12 */ { 12, ALARM_TYPE_WARN, "Well 3 Not Starting", "Well 3 Pump Running with Low Flow", 120 },
+    /* 13 */ { 13, ALARM_TYPE_WARN, "Well 1 RunCount Exceeded", "Pump 1 Run Count is Excessive", 0 },
+    /* 14 */ { 14, ALARM_TYPE_INFO, "Well 1 RunTime Exceeded", "Pump 1 Run Time is Excessive", 0 },
+    /* 15 */ { 15, ALARM_TYPE_WARN, "Well 2 RunCount Exceeded", "Pump 2 Run Count is Excessive", 0 },
+    /* 16 */ { 16, ALARM_TYPE_INFO, "Well 2 RunTime Exceeded", "Pump 2 Run Time is Excessive", 0 },
+    /* 17 */ { 17, ALARM_TYPE_WARN, "Well 3 RunCount Exceeded", "Pump 3 Run Count is Excessive", 0 },
+    /* 18 */ { 18, ALARM_TYPE_INFO, "Well 3 RunTime Exceeded", "Pump 3 Run Time is Excessive", 0 },
+    /* 19 */ { 19, ALARM_TYPE_WARN, "Irrigation RunCount Exceeded", "Pump 4 Run Count is Excessive", 0 },
+    /* 20 */ { 20, ALARM_TYPE_INFO, "Irrigation RunTime Exceeded", "Pump 4 Run Time is Excessive", 0 },
+};
 
 #endif // ALARM_CONFIG_H

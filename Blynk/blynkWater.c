@@ -80,20 +80,20 @@ int loop(MQTTClient blynkClient)
 
    // --- LED Color Publishes (retaining original behavior: no critical error check leading to client destruction here) ---
    // A more robust implementation would check return codes for these too.
-   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.Well_1_LED_Color]);
+   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.well_1_led_color]);
    pubmsg.payload = (void*)payload_str;
    pubmsg.payloadlen = strlen(payload_str);
    pubmsg.qos = QOS;
    pubmsg.retained = 0;
    MQTTClient_publishMessage(blynkClient, "ds/Well_1_LED_Bright/prop/color", &pubmsg, &token);
    
-   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.Well_2_LED_Color]);
+   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.well_2_led_color]);
    MQTTClient_publishMessage(blynkClient, "ds/Well_2_LED_Bright/prop/color", &pubmsg, &token);
    
-   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.Well_3_LED_Color]);
+   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.well_3_led_color]);
    MQTTClient_publishMessage(blynkClient, "ds/Well_3_LED_Bright/prop/color", &pubmsg, &token);
    
-   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.Irrig_4_LED_Color]);
+   strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.irrigation_4_led_color]);
    MQTTClient_publishMessage(blynkClient, "ds/Irrig_4_LED_Bright/prop/color", &pubmsg, &token);
 
 
@@ -105,13 +105,11 @@ int loop(MQTTClient blynkClient)
       return 0; // Indicate success for this cycle to main, but operation was skipped. Client not destroyed.
    }
 
-   for (i=0; i<=MONITOR_LEN-23; i++) {
+   for (i = 0; i < 17; i++) {
       json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_double(monitor_.data_payload[i]));
    }
-   for (i=18; i<=MONITOR_LEN-17; i++) {
-      json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_int(monitor_.data_payload[i]));
-   }
-   for (i=28; i<=MONITOR_LEN-9; i++) {
+
+   for (i = 17; i < MONITOR_LEN; i++) {
       json_object_object_add(root, monitor_ClientData_var_name [i], json_object_new_int(monitor_.data_payload[i]));
    }
    

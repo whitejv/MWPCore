@@ -8,7 +8,6 @@ add_subdirectory (./Monitor)
 add_subdirectory (./WellMonitor)
 add_subdirectory (./HouseMonitor)
 add_subdirectory (./Well3Monitor)
-add_subdirectory (./SysAlert)
 add_subdirectory (./SysAlertMon)
 add_subdirectory (./Blynk)
 add_subdirectory (./BlynkAlert)
@@ -22,7 +21,7 @@ add_custom_target(clean-all
    COMMAND rm -f bin/well3monitor
    COMMAND rm -f bin/blynk
    COMMAND rm -f bin/monitor
-   COMMAND rm -f bin/alert
+   COMMAND rm -f bin/SysAlertMon
    COMMAND rm -f bin/blynkalert
    # Add more commands as needed
 )

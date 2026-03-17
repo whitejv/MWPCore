@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 
       // Read the flow data from the flow sensor
       memcpy(&flowData, &wellSens_.well.flowData1, sizeof(struct FlowData));
-      flowmon(flowData.newData, flowData.milliseconds, flowData.pulses, &avgflowRateGPM, &intervalFlow, .98) ;
+      flowmon(flowData.newData, flowData.milliseconds, flowData.pulses, &avgflowRateGPM, &intervalFlow, 1.0) ;
       dailyGallons = dailyGallons + intervalFlow;
       well3Mon_.well3.intervalFlow = intervalFlow;
       well3Mon_.well3.amperage = wellMon_.well.amp_pump_3;
