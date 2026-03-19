@@ -85,16 +85,16 @@ int loop(MQTTClient blynkClient)
    pubmsg.payloadlen = strlen(payload_str);
    pubmsg.qos = QOS;
    pubmsg.retained = 0;
-   MQTTClient_publishMessage(blynkClient, "ds/Well_1_LED_Bright/prop/color", &pubmsg, &token);
+   MQTTClient_publishMessage(blynkClient, "ds/well_1_led_brightness/prop/color", &pubmsg, &token);
    
    strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.well_2_led_color]);
-   MQTTClient_publishMessage(blynkClient, "ds/Well_2_LED_Bright/prop/color", &pubmsg, &token);
+   MQTTClient_publishMessage(blynkClient, "ds/well_2_led_brightness/prop/color", &pubmsg, &token);
    
    strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.well_3_led_color]);
-   MQTTClient_publishMessage(blynkClient, "ds/Well_3_LED_Bright/prop/color", &pubmsg, &token);
+   MQTTClient_publishMessage(blynkClient, "ds/well_3_led_brightness/prop/color", &pubmsg, &token);
    
    strcpy(payload_str, ledcolorPalette[(int)monitor_.monitor.irrigation_4_led_color]);
-   MQTTClient_publishMessage(blynkClient, "ds/Irrig_4_LED_Bright/prop/color", &pubmsg, &token);
+   MQTTClient_publishMessage(blynkClient, "ds/irrigation_4_led_brightness/prop/color", &pubmsg, &token);
 
 
    //***  SEND INFO TO BLYNK (Main JSON Data Publish) ***
