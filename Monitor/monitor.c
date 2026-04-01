@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <math.h>
 #include <time.h>
 #include <json-c/json.h>
@@ -15,6 +16,11 @@ float TotalGPM = 0;
 
 #define MAX_CYCLE_COUNT 28000  // The cycle count rolls over at this value
 #define OFFLINE_THRESHOLD 5    // Number of iterations before flagging as offline
+#define TB_DEFAULT_RATE 5
+#define TB_PUMP_ACTIVE_RATE 10
+#define TB_CLOUD_HOST "mqtt.thingsboard.cloud"
+#define TB_CLOUD_PORT 1883
+#define TB_TELEMETRY_TOPIC "v1/devices/me/telemetry"
 
 // Structure to hold sensor data
 typedef struct {
@@ -76,6 +82,8 @@ SensorData sensors[4] = {0, 0, 0, 0,
                          0, 0, 0, 0,
                          0, 0, 0, 0};
 
+const char TB_CLIENTID[] = "Monitor TB Client";
+
 int main(int argc, char *argv[])
 {
    int i = 0;
@@ -96,12 +104,22 @@ int main(int argc, char *argv[])
    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
    MQTTClient_message pubmsg = MQTTClient_message_initializer;
    MQTTClient_deliveryToken token;
+   MQTTClient tb_client = NULL;
+   MQTTClient_connectOptions tb_conn_opts = MQTTClient_connectOptions_initializer;
+   MQTTClient_message tb_pubmsg = MQTTClient_message_initializer;
+   MQTTClient_deliveryToken tb_delivery_token;
    int rc;
    int opt;
-   const char *mqtt_ip;
-   int mqtt_port;
+   const char *mqtt_ip = NULL;
+   int mqtt_port = 0;
+   const char *tb_access_token = NULL;
+   int tb_enabled = FALSE;
+   int tb_connected = FALSE;
+   int tb_rate_n = TB_DEFAULT_RATE;
+   int tb_loops_since_publish = 0;
+   char tb_address[256];
 
-   while ((opt = getopt(argc, argv, "vPD")) != -1) {
+   while ((opt = getopt(argc, argv, "vPDt:r:")) != -1) {
       switch (opt) {
          case 'v':
                verbose = TRUE;
@@ -114,14 +132,39 @@ int main(int argc, char *argv[])
                mqtt_ip = DEV_MQTT_IP;
                mqtt_port = DEV_MQTT_PORT;
                break;
+            case 't':
+               tb_access_token = optarg;
+               break;
+            case 'r':
+            {
+               char *endptr = NULL;
+               long parsed_rate;
+               errno = 0;
+               parsed_rate = strtol(optarg, &endptr, 10);
+               if (errno != 0 || endptr == optarg || *endptr != '\0' || parsed_rate <= 0) {
+               fprintf(stderr, "Invalid rate for -r: %s\n", optarg);
+               fprintf(stderr, "Usage: %s [-v] [-P | -D] [-t tb_access_token] [-r tb_rate]\n", argv[0]);
+               return 1;
+               }
+               tb_rate_n = (int)parsed_rate;
+               break;
+            }
          default:
-               fprintf(stderr, "Usage: %s [-v] [-P | -D]\n", argv[0]);
+               fprintf(stderr, "Usage: %s [-v] [-P | -D] [-t tb_access_token] [-r tb_rate]\n", argv[0]);
                return 1;
       }
    }
 
    if (verbose) {
       printf("Verbose mode enabled\n");
+   }
+
+   if (tb_access_token != NULL) {
+      tb_enabled = TRUE;
+   }
+
+   if (tb_access_token == NULL && tb_rate_n != TB_DEFAULT_RATE) {
+      printf("Ignoring -r because -t was not provided.\n");
    }
 
    if (mqtt_ip == NULL) {
@@ -169,6 +212,34 @@ int main(int argc, char *argv[])
 
    //No need to subscribe to our own message
    MQTTClient_unsubscribe(client, MONITOR_TOPICID);
+
+   if (tb_enabled) {
+      snprintf(tb_address, sizeof(tb_address), "tcp://%s:%d", TB_CLOUD_HOST, TB_CLOUD_PORT);
+      printf("ThingsBoard enabled: %s at every %d loop(s)\n", tb_address, tb_rate_n);
+
+      rc = MQTTClient_create(&tb_client, tb_address, TB_CLIENTID,
+                             MQTTCLIENT_PERSISTENCE_NONE, NULL);
+      if (rc != MQTTCLIENT_SUCCESS) {
+         log_message("Monitor: ThingsBoard create failed. Return Code: %d\n", rc);
+         printf("ThingsBoard disabled: failed to create client, return code %d\n", rc);
+         tb_enabled = FALSE;
+      }
+      else {
+         tb_conn_opts.keepAliveInterval = 20;
+         tb_conn_opts.cleansession = 1;
+         tb_conn_opts.username = tb_access_token;
+         if ((rc = MQTTClient_connect(tb_client, &tb_conn_opts)) != MQTTCLIENT_SUCCESS) {
+            log_message("Monitor: ThingsBoard connect failed. Return Code: %d\n", rc);
+            printf("ThingsBoard disabled: failed to connect, return code %d\n", rc);
+            MQTTClient_destroy(&tb_client);
+            tb_enabled = FALSE;
+         }
+         else {
+            tb_connected = TRUE;
+            printf("Connected to ThingsBoard Cloud\n");
+         }
+      }
+   }
    
    /*
     * Initialize the data file with headers
@@ -411,6 +482,34 @@ int main(int argc, char *argv[])
       MQTTClient_waitForCompletion(client, token, TIMEOUT);
       //printf("Message with delivery token %d delivered\n", token);
 
+      if (tb_enabled && tb_connected) {
+         int tb_publish_rate_n = tb_rate_n;
+         if (monitor_.monitor.well_pump_1_on == 1 ||
+             monitor_.monitor.well_pump_2_on == 1 ||
+             monitor_.monitor.well_pump_3_on == 1 ||
+             monitor_.monitor.irrigation_pump_on == 1) {
+            tb_publish_rate_n = TB_PUMP_ACTIVE_RATE;
+         }
+
+         tb_loops_since_publish++;
+         if (tb_loops_since_publish >= tb_publish_rate_n) {
+            tb_pubmsg.payload = (void *)json_string;
+            tb_pubmsg.payloadlen = strlen(json_string);
+            tb_pubmsg.qos = QOS;
+            tb_pubmsg.retained = 0;
+
+            rc = MQTTClient_publishMessage(tb_client, TB_TELEMETRY_TOPIC, &tb_pubmsg, &tb_delivery_token);
+            if (rc != MQTTCLIENT_SUCCESS) {
+               log_message("Monitor: ThingsBoard publish failed. Return Code: %d\n", rc);
+               printf("ThingsBoard publish failed, return code %d\n", rc);
+            }
+            else {
+               MQTTClient_waitForCompletion(tb_client, tb_delivery_token, TIMEOUT);
+            }
+            tb_loops_since_publish = 0;
+         }
+      }
+
       json_object_put(root); // Free the memory allocated to the JSON object
 
       /*
@@ -421,6 +520,11 @@ int main(int argc, char *argv[])
    }
    log_message("Monitor: Exiting Main Loop\n") ;
    MQTTClient_unsubscribe(client, "mwp/data/monitor/#");
+
+   if (tb_connected) {
+      MQTTClient_disconnect(tb_client, 10000);
+      MQTTClient_destroy(&tb_client);
+   }
 
    MQTTClient_disconnect(client, 10000);
    MQTTClient_destroy(&client);
